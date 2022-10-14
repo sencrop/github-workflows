@@ -1,0 +1,36 @@
+name: Compute the docker image tag
+
+on:
+  workflow_call:
+    inputs:
+      release_type:
+        description: must be tag (the latest tag value) or sha (the current short commit sha)
+        type: string
+        required: true
+    outputs:
+      image_tag:
+        value: ${{ jobs.image_tag.outputs.image_tag }}
+
+jobs:
+  image_tag:
+    runs-on: "ubuntu-latest"
+    outputs:
+      image_tag:  ${{ steps.ref.outputs.image_tag }}
+    env:
+      RELEASE_TYPE: ${{ inputs.release_type }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: Compute image tag
+        id: ref
+        run: |
+          if [[ "$RELEASE_TYPE" == "tag" ]]; then
+            REF=$(git describe --tags)
+          elif [[ "$RELEASE_TYPE" == "sha" ]]; then
+            REF=$(git rev-parse --short HEAD)
+          else
+            echo "Unsupported release type $RELEASE_TYPE"
+            exit 1
+          fi
+          echo "image_tag=$REF" >> $GITHUB_OUTPUT

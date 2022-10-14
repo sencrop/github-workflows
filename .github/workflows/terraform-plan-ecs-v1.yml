@@ -1,0 +1,126 @@
+name: Terraform plan for ecs applications
+
+on:
+  workflow_call:
+    inputs:
+      aws_region:
+        type: string
+        default: "eu-central-1"
+      service:
+        type: string
+        required: true
+      environments:
+        type: string
+        default: "['preproduction', 'production']"
+      runs_on:
+        type: string
+        default: "ubuntu-latest"
+      terraform_version:
+        type: string
+        required: true
+      working_directory:
+        type: string
+        default: "./infra/terraform"
+
+jobs:
+  plan:
+    runs-on: ${{ inputs.runs_on }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    strategy:
+      # we want both plans to complete if one fails
+      fail-fast: false
+      matrix:
+        # Array input type is currently not supported https://github.com/community/community/discussions/11692
+        environment: ${{ fromJson(inputs.environments) }}
+    env:
+      AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      SERVICE: ${{ inputs.service }}
+      ENV: ${{ matrix.environment }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TF_WORKSPACE: ${{ matrix.environment }}
+      TF_LOG: INFO
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+        # get the current image tag to avoid displaying in a diff in each PR
+        # while this information would be accurate (the task definition is going to change)
+        # it will be more efficient to display the diff only when there's a real infstracture change
+        # if we display the same message 9 times out of 10 users will get the habit to ignore it
+        # and will likely ignore it the day it really matters
+      - name: Get current image tag
+        run: |
+          REF=$(aws ecs describe-task-definition --task-definition "${SERVICE}-${ENV}" --output json | jq -r '.taskDefinition.containerDefinitions[] | select(.name == "'${SERVICE}'") | .image | split(":")[1]')
+          echo ${REF}
+          echo "REF=$REF" >> ${GITHUB_ENV}
+
+      - name: Terraform setup
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Plan Terraform
+        id: plan
+        continue-on-error: true
+        run: |
+          terraform plan -var-file=${ENV}.tfvars -var docker_image_tag=${REF} -input=false -no-color -out=tfplan \
+          && terraform show -no-color tfplan
+
+      - name: Reformat Plan
+        run: |
+          echo '${{ steps.plan.outputs.stdout || steps.plan.outputs.stderr }}' \
+          | sed -E 's/^([[:space:]]+)([-+])/\2\1/g' > plan.txt
+
+      - name: Put Plan in Env Var
+        run: |
+          PLAN=$(cat plan.txt)
+          echo "PLAN<<EOF" >> $GITHUB_ENV
+          echo "$PLAN" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        env:
+          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes('Terraform Plan')
+            })
+            const output = `#### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            \`\`\`diff\n
+            ${{ env.PLAN }}
+            \`\`\`
+            <details>
+              <summary> More about this </summary>
+              This diff doesn't display the upcoming image version change as the version to deploy will be computed after the merge.
+            </details>
+            `
+            if (botComment) {
+              github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output
+              })
+            } else {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              })
+            }

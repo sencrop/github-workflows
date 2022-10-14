@@ -1,0 +1,47 @@
+name: Terraform apply for ECS applications
+
+on:
+  workflow_call:
+    inputs:
+      aws_region:
+        type: string
+        default: "eu-central-1"
+      docker_image_tag:
+        type: string
+        required: true
+      environment:
+        type: string
+        required: true
+      terraform_version:
+        type: string
+        required: true
+
+jobs:
+  apply:
+    env:
+      AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      DOCKER_IMAGE_TAG: ${{ inputs.docker_image_tag }}
+      ENV: ${{ inputs.environment }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TF_WORKSPACE: ${{ inputs.environment }}
+      TF_LOG: INFO
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+
+      - name: Terraform setup
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform apply
+        run: terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file=${ENV}.tfvars -auto-approve -input=false
