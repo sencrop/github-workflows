@@ -76,8 +76,6 @@ jobs:
 
       - uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
-        env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -86,7 +84,7 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number,
             })
-            const commentTitle = 'Terraform Plan \`${{ matrix.environment  }}\`'
+            const commentTitle = ':potted_plant: \`${{ matrix.environment }}\` terraform plan for \`${{ inputs.working_directory }}\`'
             const botComment = comments.find(comment => {
               return comment.user.type === 'Bot' && comment.body.includes(commentTitle)
             })
