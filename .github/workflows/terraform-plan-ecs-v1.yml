@@ -59,7 +59,7 @@ jobs:
           echo "REF=$REF" >> ${GITHUB_ENV}
 
       - name: Terraform setup
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ inputs.terraform_version }}
 
