@@ -1,3 +1,4 @@
+---
 name: Terraform plan for ecs applications
 
 on:
@@ -50,7 +51,7 @@ jobs:
         # get the current image tag to avoid displaying in a diff in each PR
         # while this information would be accurate (the task definition is going to change)
         # it will be more efficient to display the diff only when there's a real infstracture change
-        # if we display the same message on each PR users will get the habit to ignore it 
+        # if we display the same message on each PR users will get the habit to ignore it
         # and will likely ignore it the day it really matters
       - name: Get current image tag
         run: |
