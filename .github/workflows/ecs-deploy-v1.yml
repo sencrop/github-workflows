@@ -1,0 +1,84 @@
+---
+name: Deploy a standard ECS application
+
+on:
+  workflow_call:
+    inputs:
+      aws_region:
+        type: string
+        default: "eu-central-1"
+      docker_image_tag:
+        type: string
+        required: true
+      environment:
+        type: string
+        required: true
+      self_hosted:
+        type: boolean
+        default: false
+      service:
+        type: string
+        required: true
+      slack_channel:
+        type: string
+        required: true
+      terraform_version:
+        type: string
+        required: true
+      working_directory:
+        type: string
+        default: "./infra/terraform"
+
+jobs:
+  deploy:
+    runs-on: ${{ inputs.self_hosted && fromJSON(format('["self-hosted","{0}"]', inputs.environment)) || 'ubuntu-latest' }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    env:
+      AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      DOCKER_IMAGE_TAG: ${{ inputs.docker_image_tag }}
+      ENV: ${{ inputs.environment }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      SERVICE: ${{ inputs.service }}
+      TF_WORKSPACE: ${{ inputs.environment }}
+      TF_LOG: INFO
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Terraform setup
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform apply
+        run: terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file=${ENV}.tfvars -auto-approve -input=false
+
+      - name: Wait for stabilization
+        run: aws ecs wait services-stable --cluster "main-${ENV}" --service "${SERVICE}"
+
+      - name: Notify success
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: ${{ inputs.slack_channel }}
+          slack-message: ":white_check_mark: A new version of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) has been succseffuly deployed."
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Notify failure
+        if: ${{ failure() }}
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: ${{ inputs.slack_channel }}
+          slack-message: ":rotating_siren: The last deployment of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) has failed."
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
