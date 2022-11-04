@@ -73,15 +73,17 @@ jobs:
       # inspired by https://blog.testdouble.com/posts/2021-12-07-elevate-your-terraform-workflow-with-github-actions/
       - name: Terraform plan
         id: plan
-        continue-on-error: true
-        run: |
-          terraform plan -var-file=${ENV}.tfvars -var docker_image_tag=${REF} -input=false -no-color -out=tfplan \
-          && terraform show -no-color tfplan | sed 's/\x27/ /g'
+        run: terraform plan -var-file=${ENV}.tfvars -input=false -no-color -out=tfplan
 
-      - name: Reformat Plan
+        # 1. remove everything before the plan output
+        # 2. remove github actions output
+        # 3. move +/- at the beggining of the line to leverage github diff display
+      - name: Clean and reformat Plan
         run: |
-          echo '${{ steps.plan.outputs.stdout || steps.plan.outputs.stderr }}' \
-          | sed -E 's/^([[:space:]]+)([-+])/\2\1/g' > plan.txt
+          terraform show -no-color tfplan |\
+          sed '/Terraform will perform the following actions/,$!d' |\
+          sed '/^::/d' |\
+          sed -E 's/^([[:space:]]+)([-+])/\2\1/g'\ > plan.txt
 
       - name: Put Plan in Env Var
         run: |
