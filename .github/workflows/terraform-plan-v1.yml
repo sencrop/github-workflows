@@ -65,10 +65,14 @@ jobs:
         # 3. move +/- at the beggining of the line to leverage github diff display
       - name: Clean and reformat Plan
         run: |
-          terraform show -no-color tfplan |\
-          sed '/Terraform will perform the following actions/,$!d' |\
-          sed '/^::/d' |\
-          sed -E 's/^([[:space:]]+)([-+])/\2\1/g'\ > plan.txt
+          if terraform show -no-color tfplan | grep "Terraform will perform the following actions"; then
+            terraform show -no-color tfplan |\
+            sed '/Terraform will perform the following actions/,$!d' |\
+            sed '/^::/d' |\
+            sed -E 's/^([[:space:]]+)([-+])/\2\1/g'\ > plan.txt
+          else
+            echo "No changes. Your infrastructure matches the configuration." > plan.txt
+          fi
 
       - name: Put Plan in Env Var
         run: |

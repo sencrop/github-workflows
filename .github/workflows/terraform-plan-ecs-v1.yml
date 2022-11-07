@@ -73,17 +73,21 @@ jobs:
       # inspired by https://blog.testdouble.com/posts/2021-12-07-elevate-your-terraform-workflow-with-github-actions/
       - name: Terraform plan
         id: plan
-        run: terraform plan -var-file=${ENV}.tfvars -input=false -no-color -out=tfplan
+        run: terraform plan -var docker_image_tag=${REF} -var-file=${ENV}.tfvars -input=false -no-color -out=tfplan
 
         # 1. remove everything before the plan output
         # 2. remove github actions output
         # 3. move +/- at the beggining of the line to leverage github diff display
       - name: Clean and reformat Plan
         run: |
-          terraform show -no-color tfplan |\
-          sed '/Terraform will perform the following actions/,$!d' |\
-          sed '/^::/d' |\
-          sed -E 's/^([[:space:]]+)([-+])/\2\1/g'\ > plan.txt
+          if terraform show -no-color tfplan | grep "Terraform will perform the following actions"; then
+            terraform show -no-color tfplan |\
+            sed '/Terraform will perform the following actions/,$!d' |\
+            sed '/^::/d' |\
+            sed -E 's/^([[:space:]]+)([-+])/\2\1/g'\ > plan.txt
+          else
+            echo "No changes. Your infrastructure matches the configuration." > plan.txt
+          fi
 
       - name: Put Plan in Env Var
         run: |
