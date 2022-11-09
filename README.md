@@ -54,7 +54,7 @@ This workflow will trigger a deployment of the given version of a [standard ECS 
 The outcome of the deployment will be notified on slack.
 
 
-```
+```yaml
 jobs:
   deploy:
     uses: sencrop/github-workflows/.github/workflows/ecs-deploy-v1.yml@master
@@ -65,3 +65,5 @@ jobs:
       terraform_version: "1.2.9"
       service: "my-service"
       slack_channel: "my-ops-slack-channel"
+      notify_on_success: false
+```
