@@ -13,6 +13,9 @@ on:
       environment:
         type: string
         required: true
+      notify_on_success:
+        type: boolean
+        default: true
       self_hosted:
         type: boolean
         default: false
@@ -67,6 +70,7 @@ jobs:
         run: aws ecs wait services-stable --cluster "main-${ENV}" --service "${SERVICE}"
 
       - name: Notify success
+        if: ${{ inputs.notify_on_success }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: ${{ inputs.slack_channel }}
