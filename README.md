@@ -30,6 +30,21 @@ If you need to use a private runner set `self_hosted` to `true`.
       self_hosted: true
 ```
 
+## terraform-apply
+Perform a terraform apply against the given environment.
+
+```yaml
+jobs:
+  terraform:
+    uses: sencrop/github-workflows/.github/workflows/terraform-apply-v1.yml@master
+    secrets: inherit
+    with:
+      environment: "preproduction or production"
+      terraform_version: "1.2.9"
+      working_directory: "./terraform"
+
+```
+
 
 ## terraform-plan-ecs
 
@@ -61,7 +76,7 @@ jobs:
     secrets: inherit
     with:
       docker_image_tag: "tag-from-the-build-step"
-      environment: "preproduction pr production"
+      environment: "preproduction or production"
       terraform_version: "1.2.9"
       service: "my-service"
       slack_channel: "my-ops-slack-channel"
