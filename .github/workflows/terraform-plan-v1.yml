@@ -10,6 +10,9 @@ on:
       environments:
         type: string
         default: "['preproduction', 'production']"
+      extra_args:
+        type: string
+        default: ""
       self_hosted:
         type: boolean
         default: false
@@ -37,6 +40,7 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       ENV: ${{ matrix.environment }}
+      EXTRA_ARGS: ${{ inputs.extra_args }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       TF_WORKSPACE: ${{ matrix.environment }}
       TF_LOG: INFO
@@ -58,7 +62,7 @@ jobs:
       # inspired by https://blog.testdouble.com/posts/2021-12-07-elevate-your-terraform-workflow-with-github-actions/
       - name: Terraform plan
         id: plan
-        run: terraform plan -var-file=${ENV}.tfvars -input=false -no-color -out=tfplan
+        run: terraform plan -var-file=${ENV}.tfvars -input=false -no-color -out=tfplan ${EXTRA_ARGS}
 
         # 1. remove everything before the plan output
         # 2. remove github actions output
