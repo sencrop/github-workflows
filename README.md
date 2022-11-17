@@ -30,6 +30,14 @@ If you need to use a private runner set `self_hosted` to `true`.
       self_hosted: true
 ```
 
+For arguments non supported by default you should use the `extra_args` variable.
+
+```yaml
+  with:
+    extra_args: -var-file=users.tfvars
+
+```
+
 ## terraform-apply
 Perform a terraform apply against the given environment.
 
