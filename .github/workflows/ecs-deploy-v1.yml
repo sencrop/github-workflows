@@ -13,6 +13,9 @@ on:
       environment:
         type: string
         required: true
+      extra_args:
+        type: string
+        default: ""
       notify_on_success:
         type: boolean
         default: true
@@ -44,6 +47,7 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       DOCKER_IMAGE_TAG: ${{ inputs.docker_image_tag }}
       ENV: ${{ inputs.environment }}
+      EXTRA_ARGS: ${{ inputs.extra_args }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SERVICE: ${{ inputs.service }}
       TF_WORKSPACE: ${{ inputs.environment }}
@@ -64,7 +68,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform apply
-        run: terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file=${ENV}.tfvars -auto-approve -input=false
+        run: terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file=${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}
 
       - name: Wait for stabilization
         run: aws ecs wait services-stable --cluster "main-${ENV}" --service "${SERVICE}"
