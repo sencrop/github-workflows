@@ -18,7 +18,7 @@ on:
         default: ""
       notify_on_success:
         type: boolean
-        default: true
+        default: false
       self_hosted:
         type: boolean
         default: false
