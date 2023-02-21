@@ -31,6 +31,9 @@ on:
       terraform_version:
         type: string
         required: true
+      wait_for_stabilization:
+        type: boolean
+        default: true
       working_directory:
         type: string
         default: "./infra/terraform"
@@ -71,6 +74,7 @@ jobs:
         run: terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file=${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}
 
       - name: Wait for stabilization
+        if: ${{ inputs.wait_for_stabilization }}
         run: aws ecs wait services-stable --cluster "main-${ENV}" --service "${SERVICE}"
 
       - name: Notify success
