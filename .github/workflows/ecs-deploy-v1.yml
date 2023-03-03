@@ -70,6 +70,15 @@ jobs:
       - name: Terraform validate
         run: terraform validate
 
+      - name: Notify deployment in progress
+        if: inputs.environment  == 'production'
+        uses: slackapi/slack-github-action@v1.23.0
+        with:
+          channel-id: deployment-updates-prod
+          slack-message: ":ship: New deployment of `${{ inputs.service }}` in progress (version `${{ inputs.docker_image_tag }}`)"
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
       - name: Terraform apply
         run: terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file=${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}
 
