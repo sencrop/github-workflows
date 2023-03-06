@@ -52,6 +52,8 @@ jobs:
       ENV: ${{ inputs.environment }}
       EXTRA_ARGS: ${{ inputs.extra_args }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      LOGS_URL: https://app.datadoghq.eu/logs?query=service%3A${{ inputs.service }}%20version%3A${{ inputs.docker_image_tag }}%20env%3A${{ inputs.environment }}
       SERVICE: ${{ inputs.service }}
       TF_WORKSPACE: ${{ inputs.environment }}
       TF_LOG: INFO
@@ -80,8 +82,13 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: Terraform apply
-        run: terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file=${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}
-
+        run: |
+          if !(terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file=${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}); then
+            echo "/!\/!\/!\ The deployment has failed to stabilize after 10 minutes !"
+            echo "It likely means that this new version is crashing on start up."
+            echo "You should check the logs to understand what happened: ${LOGS_URL}"
+            exit 1
+          fi
       - name: Wait for stabilization
         if: ${{ inputs.wait_for_stabilization }}
         run: aws ecs wait services-stable --cluster "main-${ENV}" --service "${SERVICE}"
@@ -91,7 +98,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: ${{ inputs.slack_channel }}
-          slack-message: ":white_check_mark: A new version of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) has been successfully deployed to ${{ env.ENV }} (<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Github Actions>)."
+          slack-message: ":white_check_mark: A new version of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) has been successfully deployed to ${{ env.ENV }} (<${{ env.GITHUB_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
