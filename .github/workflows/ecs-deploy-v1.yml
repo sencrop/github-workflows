@@ -82,16 +82,17 @@ jobs:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: Terraform apply
+        run: terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file=${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}
+
+      - name: Wait for stabilization
+        if: ${{ inputs.wait_for_stabilization }}
         run: |
-          if !(terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file=${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}); then
+          if !(aws ecs wait services-stable --cluster "main-${ENV}" --service "${SERVICE}"); then
             echo "/!\/!\/!\ The deployment has failed to stabilize after 10 minutes !"
             echo "It likely means that this new version is crashing on start up."
             echo "You should check the logs to understand what happened: ${LOGS_URL}"
             exit 1
           fi
-      - name: Wait for stabilization
-        if: ${{ inputs.wait_for_stabilization }}
-        run: aws ecs wait services-stable --cluster "main-${ENV}" --service "${SERVICE}"
 
       - name: Notify success
         if: ${{ inputs.notify_on_success }}
