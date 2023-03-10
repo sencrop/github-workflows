@@ -44,6 +44,9 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       TF_WORKSPACE: ${{ matrix.environment }}
       TF_LOG: INFO
+      DATABRICKS_USERNAME: ${{ secrets.DATABRICKS_USERNAME }}
+      DATABRICKS_ACCOUNT_ID: ${{ secrets.DATABRICKS_ACCOUNT_ID }}
+      TF_VAR_databricks_account_id: ${{ secrets.DATABRICKS_ACCOUNT_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
