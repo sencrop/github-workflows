@@ -52,7 +52,8 @@ jobs:
       ENV: ${{ inputs.environment }}
       EXTRA_ARGS: ${{ inputs.extra_args }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      GITHUB_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      GITHUB_REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
+      GITHUB_ACTIONS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       LOGS_URL: https://app.datadoghq.eu/logs?query=service%3A${{ inputs.service }}%20version%3A${{ inputs.docker_image_tag }}%20env%3A${{ inputs.environment }}
       SERVICE: ${{ inputs.service }}
       TF_WORKSPACE: ${{ inputs.environment }}
@@ -99,7 +100,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: ${{ inputs.slack_channel }}
-          slack-message: ":white_check_mark: A new version of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) has been successfully deployed to ${{ env.ENV }} (<${{ env.GITHUB_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
+          slack-message: ":white_check_mark: A new version of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) has been successfully deployed to ${{ env.ENV }} (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
@@ -108,6 +109,6 @@ jobs:
         uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: ${{ inputs.slack_channel }}
-          slack-message: ":rotating_siren: The last deployment of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) to ${{ env.ENV }} has failed (<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Github Actions>)."
+          slack-message: ":rotating_siren: The last deployment of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) to ${{ env.ENV }} has failed (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
