@@ -73,12 +73,19 @@ jobs:
       - name: Terraform validate
         run: terraform validate
 
+      - name: Get current version
+        id: current_version
+        run: |
+          CURRENT_TASK_DEFINITION=$(aws ecs list-task-definitions | jq --arg SERVICE "$SERVICE" --arg ENVIRONMENT "$ENV" -r -c '.taskDefinitionArns[] | select(contains($SERVICE + "-" + $ENVIRONMENT))')
+          CURRENT_IMAGE_TAG=$(aws ecs describe-task-definition --task-definition $CURRENT_TASK_DEFINITION | jq --arg SERVICE "$SERVICE" -r -c '.taskDefinition.containerDefinitions[] | select(.name == $SERVICE) | .image' | cut -d':' -f2)
+          echo "image_tag=$CURRENT_IMAGE_TAG" >> $GITHUB_OUTPUT
+
       - name: Notify deployment in progress
         if: inputs.environment  == 'production'
         uses: slackapi/slack-github-action@v1.23.0
         with:
           channel-id: deployment-updates-prod
-          slack-message: ":ship: New deployment of `${{ inputs.service }}` in progress (version `${{ inputs.docker_image_tag }}`)"
+          slack-message: ":ship: New deployment of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) in progress (<${{ env.GITHUB_REPOSITORY_URL }}/compare/${{ steps.current_version.outputs.image_tag }}...${{ inputs.docker_image_tag }}|CHANGELOG>)"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
