@@ -1,0 +1,133 @@
+---
+name: Terraform plan
+
+on:
+  workflow_call:
+    inputs:
+      aws_region:
+        type: string
+        default: "eu-central-1"
+      ci_iam_role:
+        type: string
+        default: github-actions-common-terraform
+      environments:
+        type: string
+        default: "['preproduction', 'production']"
+      extra_args:
+        type: string
+        default: ""
+      self_hosted:
+        type: boolean
+        default: false
+      terraform_version:
+        type: string
+        required: true
+      working_directory:
+        type: string
+        required: true
+
+jobs:
+  plan:
+    runs-on: ${{ inputs.self_hosted && fromJSON(format('["self-hosted","{0}"]', matrix.environment)) || 'ubuntu-latest' }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    strategy:
+      # we want both plans to complete if one fails
+      fail-fast: false
+      matrix:
+        # Array input type is currently not supported https://github.com/community/community/discussions/11692
+        environment: ${{ fromJson(inputs.environments) }}
+    env:
+      AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
+      ENV: ${{ matrix.environment }}
+      EXTRA_ARGS: ${{ inputs.extra_args }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TF_WORKSPACE: ${{ matrix.environment }}
+      TF_LOG: INFO
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          # AWS_ACCOUNT_ID is defined at the github organisation level
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ inputs.ci_iam_role }}
+
+      - name: Terraform setup
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform validate
+        run: terraform validate
+
+      # inspired by https://blog.testdouble.com/posts/2021-12-07-elevate-your-terraform-workflow-with-github-actions/
+      - name: Terraform plan
+        id: plan
+        run: terraform plan -var-file=${ENV}.tfvars -input=false -no-color -out=tfplan ${EXTRA_ARGS}
+
+        # 1. remove everything before the plan output
+        # 2. remove github actions output
+        # 3. move +/- at the beggining of the line to leverage github diff display
+      - name: Clean and reformat Plan
+        run: |
+          if terraform show -no-color tfplan | grep "Terraform will perform the following actions"; then
+            terraform show -no-color tfplan |\
+            sed '/Terraform will perform the following actions/,$!d' |\
+            sed '/^::/d' |\
+            sed -E 's/^([[:space:]]+)([-+])/\2\1/g'\ > plan.txt
+          else
+            echo "No changes. Your infrastructure matches the configuration." > plan.txt
+          fi
+
+      - name: Put Plan in Env Var
+        run: |
+          PLAN=$(cat plan.txt)
+          echo "PLAN<<EOF" >> $GITHUB_ENV
+          echo "$PLAN" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+            const commentTitle = ':potted_plant: \`${{ matrix.environment }}\` terraform plan for \`${{ inputs.working_directory }}\`'
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes(commentTitle)
+            })
+            const output = `#### ${commentTitle}
+            \`\`\`diff\n
+            ${{ env.PLAN }}
+            \`\`\`
+            `
+            // Update a comment if it already exists
+            if (botComment) {
+              github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output
+              })
+            } else {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: output
+              })
+            }
