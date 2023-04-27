@@ -1,0 +1,43 @@
+name: Docker push
+
+on:
+  workflow_call:
+    inputs:
+      aws_region:
+        type: string
+        default: "eu-central-1"
+      docker_image_name:
+        type: string
+        required: true
+      docker_image_tag:
+        type: string
+        required: true
+
+jobs:
+  push:
+    runs-on: "ubuntu-latest"
+    env:
+      AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
+      DOCKER_IMAGE_NAME: ${{ inputs.docker_image_name }}
+      DOCKER_IMAGE_TAG: ${{ inputs.docker_image_tag }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          # AWS_ACCOUNT_ID is defined at the github organisation level
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github-actions-common-ecr-push
+
+      - name: Build docker
+        run: docker build -t ${AWS_ACCOUNT_ID}.dkr.ecr.eu-central-1.amazonaws.com/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .
+
+      - name: Push to AWS ECR
+        run: |
+          aws ecr get-login-password | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.eu-central-1.amazonaws.com
+          docker push -a ${AWS_ACCOUNT_ID}.dkr.ecr.eu-central-1.amazonaws.com/${DOCKER_IMAGE_NAME}
