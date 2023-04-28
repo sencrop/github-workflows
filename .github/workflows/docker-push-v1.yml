@@ -18,6 +18,7 @@ jobs:
     runs-on: "ubuntu-latest"
     env:
       AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
       DOCKER_IMAGE_NAME: ${{ inputs.docker_image_name }}
       DOCKER_IMAGE_TAG: ${{ inputs.docker_image_tag }}
     permissions:
