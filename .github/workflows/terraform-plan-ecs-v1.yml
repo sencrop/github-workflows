@@ -93,9 +93,12 @@ jobs:
             echo "No changes. Your infrastructure matches the configuration." > plan.txt
           fi
 
+      # Some plans may rarely contain backticks which break the following javascript code to create a comment and
+      # show the plan, so we need to remove them first
       - name: Put Plan in Env Var
         run: |
-          PLAN=$(cat plan.txt)
+          sed 's/`//g' plan.txt > safe_plan.txt
+          PLAN=$(cat safe_plan.txt)
           echo "PLAN<<EOF" >> $GITHUB_ENV
           echo "$PLAN" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
