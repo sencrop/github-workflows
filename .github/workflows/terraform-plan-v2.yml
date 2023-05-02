@@ -94,7 +94,7 @@ jobs:
       # show the plan, so we need to remove them first
       - name: Put Plan in Env Var
         run: |
-          sed 's/`//g' plan.txt > safe_plan.txt
+          sed 's|`|\\\`|g' plan.txt > safe_plan.txt
           PLAN=$(cat safe_plan.txt)
           echo "PLAN<<EOF" >> $GITHUB_ENV
           echo "$PLAN" >> $GITHUB_ENV
