@@ -9,7 +9,7 @@ on:
         default: "eu-central-1"
       ci_iam_role:
         type: string
-        default: github-actions-common-terraform
+        default: ""
       environments:
         type: string
         default: "['preproduction', 'production']"
@@ -40,6 +40,7 @@ jobs:
         environment: ${{ fromJson(inputs.environments) }}
     env:
       AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
+      CI_IAM_ROLE: ${{ inputs.ci_iam_role }}
       ENV: ${{ matrix.environment }}
       EXTRA_ARGS: ${{ inputs.extra_args }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -53,12 +54,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Compute IAM role
+        id: ci_identity
+        run: |
+          if [[ -z "$CI_IAM_ROLE" ]]; then
+            echo "iam_role=github-actions-$(echo "$GITHUB_REPOSITORY" | awk -F'/' '{print tolower($2)}')" >> ${GITHUB_OUTPUT}
+          else
+            echo "iam_role=$CI_IAM_ROLE" >> ${GITHUB_OUTPUT}
+          fi
+
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
           # AWS_ACCOUNT_ID is defined at the github organisation level
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ inputs.ci_iam_role }}
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ steps.ci_identity.outputs.iam_role }}
 
       - name: Terraform setup
         uses: hashicorp/setup-terraform@v2
