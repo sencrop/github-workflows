@@ -6,6 +6,9 @@ on:
       aws_region:
         type: string
         default: "eu-central-1"
+      ci_iam_role:
+        type: string
+        default: ""
       docker_image_name:
         type: string
         required: true
@@ -19,6 +22,7 @@ jobs:
     env:
       AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
       AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      CI_IAM_ROLE: ${{ inputs.ci_iam_role }}
       DOCKER_IMAGE_NAME: ${{ inputs.docker_image_name }}
       DOCKER_IMAGE_TAG: ${{ inputs.docker_image_tag }}
     permissions:
@@ -27,6 +31,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Compute IAM role
+        id: ci_identity
+        run: |
+          if [[ -z "$CI_IAM_ROLE" ]]; then
+            echo "iam_role=github-actions-$(echo "$GITHUB_REPOSITORY" | awk -F'/' '{print tolower($2)}')" >> ${GITHUB_OUTPUT}
+          else
+            echo "iam_role=$CI_IAM_ROLE" >> ${GITHUB_OUTPUT}
+          fi
 
       - name: Configure aws credentials
         uses: aws-actions/configure-aws-credentials@v2
