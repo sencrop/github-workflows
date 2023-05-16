@@ -17,8 +17,8 @@ jobs:
     uses: sencrop/github-workflows/.github/workflows/terraform-plan-v2.yml@master
     secrets: inherit
     with:
-      terraform_version: "1.2.9"
-      working_directory: "./terraform"
+      terraform_version: 1.4.5
+      working_directory: ./terraform
 
 ```
 
@@ -54,8 +54,8 @@ jobs:
     secrets: inherit
     with:
       environment: "preproduction or production"
-      terraform_version: "1.2.9"
-      working_directory: "./terraform"
+      terraform_version: 1.4.5
+      working_directory: ./terraform
 
 ```
 
@@ -72,8 +72,8 @@ jobs:
     uses: sencrop/github-workflows/.github/workflows/terraform-plan-ecs-v2.yml@master
     secrets: inherit
     with:
-      service: "my-service"
-      terraform_version: "1.2.9"
+      service: my-service
+      terraform_version: 1.4.5
 
 ```
 
@@ -89,15 +89,15 @@ jobs:
     uses: sencrop/github-workflows/.github/workflows/ecs-deploy-v2.yml@master
     secrets: inherit
     with:
-      docker_image_tag: "tag-from-the-build-step"
+      docker_image_tag: tag-from-the-build-step
       environment: "preproduction or production"
-      terraform_version: "1.2.9"
-      service: "my-service"
-      slack_channel: "my-ops-slack-channel"
+      terraform_version: 1.4.5
+      service: my-service
+      slack_channel: my-ops-slack-channel
       notify_on_success: false
 ```
 
-## docker-push
+### docker-push
 
 This workflow build and push a docker image to an elastic container repository.
 
