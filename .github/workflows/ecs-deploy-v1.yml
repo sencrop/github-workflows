@@ -68,7 +68,7 @@ jobs:
           terraform_version: ${{ inputs.terraform_version }}
 
       - name: Terraform init
-        run: terraform init
+        run: terraform init -input=false
 
       - name: Terraform validate
         run: terraform validate
