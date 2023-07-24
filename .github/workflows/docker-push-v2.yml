@@ -48,8 +48,12 @@ jobs:
           # AWS_ACCOUNT_ID is defined at the github organisation level
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ steps.ci_identity.outputs.iam_role }}
 
-      - uses: satackey/action-docker-layer-caching@v0.0.11
+      - uses: jpribyl/action-docker-layer-caching@v0.1.1
         continue-on-error: true
+        with:
+          key: docker-layer-cache-${{ env.DOCKER_IMAGE_NAME }}-{hash}
+          restore-keys: |
+            docker-layer-cache-${{ env.DOCKER_IMAGE_NAME }}-
 
       - name: Build docker
         run: docker build -t ${AWS_ACCOUNT_ID}.dkr.ecr.eu-central-1.amazonaws.com/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} .
