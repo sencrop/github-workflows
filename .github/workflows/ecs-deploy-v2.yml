@@ -19,6 +19,9 @@ on:
       extra_args:
         type: string
         default: ""
+      log_level:
+        type: string
+        default: "INFO"
       notify_on_success:
         type: boolean
         default: false
@@ -59,7 +62,7 @@ jobs:
       LOGS_URL: https://app.datadoghq.eu/logs?query=service%3A${{ inputs.service }}%20version%3A${{ inputs.docker_image_tag }}%20env%3A${{ inputs.environment }}
       SERVICE: ${{ inputs.service }}
       TF_WORKSPACE: ${{ inputs.environment }}
-      TF_LOG: INFO
+      TF_LOG: ${{ inputs.log_level }}
     permissions:
       id-token: write
       contents: read

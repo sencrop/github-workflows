@@ -16,6 +16,9 @@ on:
       extra_args:
         type: string
         default: ""
+      log_level:
+        type: string
+        default: "INFO"
       self_hosted:
         type: boolean
         default: false
@@ -45,7 +48,7 @@ jobs:
       EXTRA_ARGS: ${{ inputs.extra_args }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       TF_WORKSPACE: ${{ matrix.environment }}
-      TF_LOG: INFO
+      TF_LOG: ${{ inputs.log_level }}
     permissions:
       id-token: write
       contents: read
