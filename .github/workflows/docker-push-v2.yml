@@ -7,6 +7,9 @@ on:
       aws_region:
         type: string
         default: "eu-central-1"
+      build_context:
+        type: string
+        default: "."
       ci_iam_role:
         type: string
         default: ""
@@ -74,6 +77,6 @@ jobs:
         if: ${{ ! inputs.cache_docker_layers }}
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ${{ inputs.build_context }}
           push: true
           tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
