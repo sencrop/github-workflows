@@ -10,6 +10,9 @@ on:
       build_context:
         type: string
         default: "."
+      cache_docker_layers:
+        type: boolean
+        default: false
       ci_iam_role:
         type: string
         default: ""
@@ -19,9 +22,14 @@ on:
       docker_image_tag:
         type: string
         required: true
-      cache_docker_layers:
+      use_ssh:
         type: boolean
         default: false
+    secrets:
+      OLYMPE_4_DEMETER:
+        required: false
+      SSH_PRIVATE_KEY:
+        required: false
 
 jobs:
   push:
@@ -63,6 +71,18 @@ jobs:
         with:
           registry: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com
 
+      - name: Start ssh agent
+        if: ${{ inputs.use_ssh }}
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.OLYMPE_4_DEMETER || secrets.SSH_PRIVATE_KEY }}
+
+      - name: Set ssh parameter
+        id: set_ssh
+        if: ${{ inputs.use_ssh }}
+        run: |
+          echo "ssh=main=$SSH_AUTH_SOCK" >> ${GITHUB_OUTPUT}
+
       - name: Build and push (with cache)
         if: ${{ inputs.cache_docker_layers }}
         uses: docker/build-push-action@v4
@@ -72,6 +92,7 @@ jobs:
           tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          ssh: ${{ steps.set_ssh.outputs.ssh }}
 
       - name: Build and push (without cache)
         if: ${{ ! inputs.cache_docker_layers }}
@@ -80,3 +101,4 @@ jobs:
           context: ${{ inputs.build_context }}
           push: true
           tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+          ssh: ${{ steps.set_ssh.outputs.ssh }}
