@@ -24,7 +24,7 @@ on:
         default: false
       terraform_version:
         type: string
-        required: true
+        required: false
       working_directory:
         type: string
         required: true
@@ -73,10 +73,26 @@ jobs:
           # AWS_ACCOUNT_ID is defined at the github organisation level
           role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ steps.ci_identity.outputs.iam_role }}
 
+
+      - name: Compute terraform version
+        id: terraform_version
+        run: |
+          set -eo pipefail
+          if [[ -z "$TF_VERSION" ]]; then
+            TF_VERSION=$(cat main.tf | grep required_version | awk -F'"' '{print $2}')
+            if [[ ! "$TF_VERSION" =~ ^[0-9]\.[0-9]\.[0-9]$ ]]; then
+              echo "Unsupported terraform version format $TF_VERSION, please use strict version pinning"
+              exit 1
+            fi
+          fi
+          echo "version=$TF_VERSION" >> ${GITHUB_OUTPUT}
+        env:
+          TF_VERSION: ${{ inputs.terraform_version }}
+
       - name: Terraform setup
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: ${{ inputs.terraform_version }}
+          terraform_version: ${{ steps.terraform_version.outputs.version }}
 
       - name: Terraform init
         run: terraform init -input=false
