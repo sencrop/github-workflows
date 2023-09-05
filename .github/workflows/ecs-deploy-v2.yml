@@ -74,7 +74,7 @@ jobs:
         id: ci_identity
         run: |
           if [[ -z "$CI_IAM_ROLE" ]]; then
-            echo "iam_role=github-actions-$(echo "$GITHUB_REPOSITORY" | awk -F'/' '{print tolower($2)}')" >> ${GITHUB_OUTPUT}
+            echo "iam_role=github-actions-$(echo "$GITHUB_REPOSITORY" | awk -F'/' '{print $2}')" >> ${GITHUB_OUTPUT}
           else
             echo "iam_role=$CI_IAM_ROLE" >> ${GITHUB_OUTPUT}
           fi
