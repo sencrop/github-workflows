@@ -77,7 +77,7 @@ jobs:
         if: ${{ inputs.use_ssh }}
         uses: webfactory/ssh-agent@v0.5.4
         with:
-          ssh-private-key: ${{ secrets.OLYMPE_4_DEMETER || OLYMPE_4_SISYPHE || secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.OLYMPE_4_DEMETER || secrets.OLYMPE_4_SISYPHE || secrets.SSH_PRIVATE_KEY }}
 
       - name: Set ssh parameter
         id: set_ssh
