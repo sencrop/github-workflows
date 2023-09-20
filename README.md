@@ -1,11 +1,12 @@
 # github-workflows
 Common Github Actions workflows
 
-## authentication
+## Authentication
 
-Workflows v2 and above are using Github/AWS OpenID connect to perform the AWS authentication ([refs](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)).
+Workflows v2 and above are using Github/AWS OpenID connect to perform the AWS authentication ([refs](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)).  
+If your repository needs to access AWS you will need to create a dedicated CI profile in [infra-ci](https://github.com/sencrop/infra-ci).
 
-## available workflows
+## Standard workflows
 
 ### terraform-plan
 
@@ -57,6 +58,28 @@ jobs:
 
 ```
 
+### docker-push
+
+This workflow build and push a docker image to an elastic container repository.
+
+```yaml
+jobs:
+  image:
+    uses: sencrop/github-workflows/.github/workflows/docker-push-v2.yml@master
+    secrets: inherit
+    with:
+      docker_image_name: your-image-name
+      docker_image_tag: your-image-tag
+```
+
+If you build often your docker image you might benefit from the built in [cache management](https://docs.docker.com/build/ci/github-actions/cache/).
+
+```
+    with:
+      cache_docker_layers: true
+```
+
+## ECS workflows
 
 ### terraform-plan-ecs
 
@@ -73,6 +96,7 @@ jobs:
       service: my-service
 
 ```
+
 
 ### ecs-deploy
 
@@ -92,16 +116,70 @@ jobs:
       slack_channel: my-ops-slack-channel
 ```
 
-### docker-push
 
-This workflow build and push a docker image to an elastic container repository.
+### ecs-start
+
+This workflow will start an ECS service. If the service is already running it has no effect.
+
+```yaml
+  start_service:
+    uses: sencrop/github-workflows/.github/workflows/ecs-start-v2.yml@master
+    secrets: inherit
+    with:
+      service: my service
+      environment: preproduction or production
+```
+
+### ecs-stop
+
+This workflow will stop an ECS service. If the service is already stopped it has no effect.
+
+```yaml
+  stop_service:
+    uses: sencrop/github-workflows/.github/workflows/ecs-stop-v2.yml@master
+    secrets: inherit
+    with:
+      service: my service
+      environment: preproduction or production
+```
+
+### ecs-restart
+
+This workflow will restart a running ECS service.
+
+```yaml
+  restart_service:
+    uses: sencrop/github-workflows/.github/workflows/ecs-restart-v2.yml@master
+    secrets: inherit
+    with:
+      service: my service
+      environment: preproduction or production
+```
+
+## RDS workflows
+
+### rds-start
+
+This workflow will start a RDS instance. If the database instance is already running it has no effect.
 
 ```yaml
 jobs:
-  image:
-    uses: sencrop/github-workflows/.github/workflows/docker-push-v2.yml@master
+  start_db:
+    uses: sencrop/github-workflows/.github/workflows/rds-start-v2.yml@master
     secrets: inherit
     with:
-      docker_image_name: your-image-name
-      docker_image_tag: your-image-tag
+      db_instance: my-instance-name
+```
+### rds-stop
+
+
+This workflow will stop a RDS instance. If the database instance is already stopped it has no effect.
+
+```yaml
+jobs:
+  db:
+    uses: sencrop/github-workflows/.github/workflows/rds-stop-v2.yml@master
+    secrets: inherit
+    with:
+      db_instance: my-instance-name
 ```
