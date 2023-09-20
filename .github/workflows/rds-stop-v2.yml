@@ -1,0 +1,49 @@
+---
+name: Stop a RDS instance
+
+on:
+  workflow_call:
+    inputs:
+      aws_region:
+        type: string
+        default: "eu-central-1"
+      db_instance:
+        type: string
+        required: true
+
+
+jobs:
+  stop:
+    runs-on: ubuntu-latest
+    env:
+      AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: Compute IAM role
+        id: ci_identity
+        run: |
+          if [[ -z "$CI_IAM_ROLE" ]]; then
+            echo "iam_role=github-actions-$(echo "$GITHUB_REPOSITORY" | awk -F'/' '{print $2}')" >> ${GITHUB_OUTPUT}
+          else
+            echo "iam_role=$CI_IAM_ROLE" >> ${GITHUB_OUTPUT}
+          fi
+
+      - name: Configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ steps.ci_identity.outputs.iam_role }}
+
+      - name: Stop RDS instance
+        run: |
+          if [[ $(aws rds describe-db-instances --db-instance-identifier "${{ inputs.db_instance }}" | jq -r '.DBInstances[0]'.DBInstanceStatus) != "stopped" ]]; then
+            aws rds stop-db-instance --db-instance-identifier "${{ inputs.db_instance }}"
+            echo "${{ inputs.db_instance }} has been stopped"
+          else
+            echo "${{ inputs.db_instance }} is already stopped"
+          fi
