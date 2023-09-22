@@ -58,6 +58,23 @@ jobs:
 
 ```
 
+### version
+
+This workflow will output a version for the current build. It can be either based on the commit hash (default) or on the current tag.  
+You can the get use the computed version in subsequent jobs using `${{ needs.version.outputs.version }}`.
+
+```yaml
+jobs:
+  version:
+    uses: sencrop/github-workflows/.github/workflows/version-v2.yml@master
+```
+
+If you want a versiom based on the current tag set `use_tags`.
+```yaml
+    with:
+      use_tags: true
+```
+
 ### docker-push
 
 This workflow build and push a docker image to an elastic container repository.
@@ -74,7 +91,7 @@ jobs:
 
 If you build often your docker image you might benefit from the built in [cache management](https://docs.docker.com/build/ci/github-actions/cache/).
 
-```
+```yaml
     with:
       cache_docker_layers: true
 ```
