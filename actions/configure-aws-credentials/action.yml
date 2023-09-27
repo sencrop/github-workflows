@@ -28,6 +28,5 @@ runs:
     - name: Configure aws credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-region: ${{ inputs.AWS_DEFAULT_REGION }}
-        # AWS_ACCOUNT_ID is defined at the github organisation level
-        role-to-assume: arn:aws:iam::${{ inputs.AWS_ACCOUNT_ID }}:role/${{ steps.ci_identity.outputs.iam_role }}
+        aws-region: ${{ inputs.aws_region }}
+        role-to-assume: arn:aws:iam::${{ inputs.aws_account_id }}:role/${{ steps.ci_identity.outputs.iam_role }}
