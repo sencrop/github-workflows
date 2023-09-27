@@ -27,20 +27,13 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
 
-      - name: Compute IAM role
-        id: ci_identity
-        run: |
-          if [[ -z "$CI_IAM_ROLE" ]]; then
-            echo "iam_role=github-actions-$(echo "$GITHUB_REPOSITORY" | awk -F'/' '{print $2}')" >> ${GITHUB_OUTPUT}
-          else
-            echo "iam_role=$CI_IAM_ROLE" >> ${GITHUB_OUTPUT}
-          fi
-
       - name: Configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: sencrop/github-workflows/actions/configure-aws-credentials@master
         with:
-          aws-region: ${{ inputs.aws_region }}
-          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/${{ steps.ci_identity.outputs.iam_role }}
+          aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+          aws_region: ${{ inputs.aws_region }}
+          ci_iam_role: ${{ inputs.ci_iam_role }}
+
 
       - name: Stop ECS service
         run: |
