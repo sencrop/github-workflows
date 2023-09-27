@@ -55,7 +55,7 @@ jobs:
       - name: Configure aws credentials
         uses: sencrop/github-workflows/actions/configure-aws-credentials@master
         with:
-          aws_account_id: vars.AWS_ACCOUNT_ID
+          aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
           aws_region: ${{ inputs.aws_region }}
           ci_iam_role: ${{ inputs.ci_iam_role }}
 
