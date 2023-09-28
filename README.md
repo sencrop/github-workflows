@@ -200,3 +200,52 @@ jobs:
     with:
       db_instance: my-instance-name
 ```
+
+## Standard actions
+
+### configure-aws-credentials
+
+This action will authenticate the current CI wokrflow with AWS 
+
+```yaml
+jobs:
+  my-job:
+    steps:
+      - name: Configure aws credentials
+        uses: sencrop/github-workflows/actions/configure-aws-credentials@master
+        with:
+          aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+```
+
+### notify-deployment-in-progress
+This action will notify in slack and in datadog that a deployment has been initiated for an application.
+
+```yaml
+jobs:
+  my-job:
+    steps:
+      - name: Notify deployment in progress
+        uses: sencrop/github-workflows/actions/notify-deployment-in-progress@master
+        with:
+          service: my-service
+          environment: preproduction or production
+          dd_api_key: ${{ secrets.DD_API_KEY }}
+          current_version: version N-1
+          deployed_version: version N
+          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
+```
+
+### track-deployment-time
+This action will track in datadog the deployment time based on the duration the Github Action workflow
+```
+jobs:
+  my-job:
+    steps:
+      - name: Track deployment time
+        uses: sencrop/github-workflows/actions/track-deployment-time@master
+        with:
+          service: my-service
+          environment: preproduction or production
+          dd_api_key: ${{ secrets.DD_API_KEY }}
+```
+

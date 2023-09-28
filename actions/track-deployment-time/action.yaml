@@ -1,0 +1,55 @@
+---
+name: "Track deployment time"
+description: "Track the deployment time"
+
+inputs:
+  environment:
+    type: string
+    required: true
+  service:
+    type: string
+    required: true
+  dd_api_key:
+    type: string
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Track deployment in datadog
+      run: |
+        start_ts=$(date -d "$(gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }} | jq -r .run_started_at)" +"%s")
+        now_ts=$(date +%s)
+        curl --silent -X POST "https://api.datadoghq.eu/api/v2/series" \
+          -H "Accept: application/json" \
+          -H "Content-Type: application/json" \
+          -H "DD-API-KEY: ${DD_API_KEY}" \
+          -d @- << EOF
+            {
+              "series": [
+                {
+                  "metric": "sencrop.ci.deployment_time",
+                  "type": 3,
+                  "points": [
+                    {
+                      "timestamp": ${now_ts},
+                      "value":  $(( now_ts - start_ts))
+                    }
+                  ],
+                  "tags": [
+                    "repository:${{ github.repository }}",
+                    "env:$ENV",
+                    "environment:$ENV",
+                    "application:$SERVICE",
+                    "service:$SERVICE"
+                  ]
+                }
+              ]
+            }
+        EOF
+      shell: bash
+      env:
+        DD_API_KEY: ${{ inputs.dd_api_key }}
+        ENV: ${{ inputs.environment }}
+        GH_TOKEN: ${{ github.token }}
+        SERVICE: ${{ inputs.service }}

@@ -64,6 +64,7 @@ jobs:
       TF_WORKSPACE: ${{ inputs.environment }}
       TF_LOG: ${{ inputs.log_level }}
     permissions:
+      actions: write
       id-token: write
       contents: read
     steps:
@@ -111,13 +112,14 @@ jobs:
           echo "image_tag=$CURRENT_IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: Notify deployment in progress
-        if: inputs.environment  == 'production'
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: sencrop/github-workflows/actions/notify-deployment-in-progress@master
         with:
-          channel-id: deployment-updates-prod
-          slack-message: ":ship: New deployment of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) in progress (<${{ env.GITHUB_REPOSITORY_URL }}/compare/${{ steps.current_version.outputs.image_tag }}...${{ inputs.docker_image_tag }}|CHANGELOG>)"
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          service: ${{ inputs.service }}
+          environment: ${{ inputs.environment }}
+          dd_api_key: ${{ secrets.DD_API_KEY }}
+          current_version: ${{ steps.current_version.outputs.image_tag }}
+          deployed_version: ${{ inputs.docker_image_tag }}
+          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: Terraform apply
         run: terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file=${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}
@@ -131,6 +133,13 @@ jobs:
             echo "You should check the logs to understand what happened: ${LOGS_URL}"
             exit 1
           fi
+
+      - name: Track deployment time
+        uses: sencrop/github-workflows/actions/track-deployment-time@master
+        with:
+          service: ${{ inputs.service }}
+          environment: ${{ inputs.environment }}
+          dd_api_key: ${{ secrets.DD_API_KEY }}
 
       - name: Notify success
         if: ${{ inputs.notify_on_success }}
