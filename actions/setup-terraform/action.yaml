@@ -1,0 +1,36 @@
+---
+name: "Terraform setup"
+description: "Setup terraform using the input version or the version configured in main.tf"
+
+inputs:
+  terraform_version:
+    type: string
+    required: false
+  working_directory:
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: Compute terraform version
+      id: terraform_version
+      run: |
+        set -eo pipefail
+        echo "$pwd"
+        if [[ -z "$TF_VERSION" ]]; then
+          TF_VERSION=$(cat main.tf | grep required_version | awk -F'"' '{print $2}')
+          if [[ ! "$TF_VERSION" =~ ^(= )?[0-9]\.[0-9]\.[0-9]$ ]]; then
+            echo "Unsupported terraform version format $TF_VERSION, please use strict version pinning"
+            exit 1
+          fi
+        fi
+        echo "version=$TF_VERSION" >> ${GITHUB_OUTPUT}
+      env:
+        TF_VERSION: ${{ inputs.terraform_version }}
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+
+    - name: Terraform setup
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: ${{ steps.terraform_version.outputs.version }}
