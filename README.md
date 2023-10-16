@@ -203,6 +203,8 @@ jobs:
 
 ## Standard actions
 
+Standard actions can be reused in any custom or standard workflows.
+
 ### configure-aws-credentials
 
 This action will authenticate the current CI wokrflow with AWS 
@@ -237,7 +239,7 @@ jobs:
 
 ### track-deployment-time
 This action will track in datadog the deployment time based on the duration the Github Action workflow
-```
+```yaml
 jobs:
   my-job:
     steps:
@@ -249,3 +251,17 @@ jobs:
           dd_api_key: ${{ secrets.DD_API_KEY }}
 ```
 
+### setup-terraform
+This action setup terraform using the version defined in `main.tf`. The version must be strictly defined.
+
+```yaml
+jobs:
+  my-job:
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Terraform setup
+        uses: sencrop/github-workflows/actions/setup-terraform@master
+        with:
+          working_directory: path/to/tf/directory
+```
