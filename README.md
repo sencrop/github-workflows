@@ -207,7 +207,8 @@ Standard actions can be reused in any custom or standard workflows.
 
 ### configure-aws-credentials
 
-This action will authenticate the current CI wokrflow with AWS 
+This action will authenticate the current CI wokrflow with AWS.
+The variable `AWS_ACCOUNT_ID` is a global github variable accessible to all private repositories.
 
 ```yaml
 jobs:
