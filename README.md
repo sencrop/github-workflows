@@ -209,10 +209,14 @@ Standard actions can be reused in any custom or standard workflows.
 
 This action will authenticate the current CI wokrflow with AWS.
 The variable `AWS_ACCOUNT_ID` is a global github variable accessible to all private repositories.
+This action requires the `id-token: write` permission.
 
 ```yaml
 jobs:
   my-job:
+  my-job:
+    permissions:
+        id-token: write
     steps:
       - name: Configure aws credentials
         uses: sencrop/github-workflows/actions/configure-aws-credentials@master
@@ -239,9 +243,12 @@ jobs:
 ```
 
 ### track-deployment-time
-This action will track in datadog the deployment time based on the duration the Github Action workflow
+This action will track in datadog the deployment time based on the duration the Github Action workflow.
+This action requires the `actions: read` permission.
 ```yaml
 jobs:
+  permissions:
+      actions: read
   my-job:
     steps:
       - name: Track deployment time
@@ -258,6 +265,8 @@ This action setup terraform using the version defined in `main.tf`. The version 
 ```yaml
 jobs:
   my-job:
+    permissions:
+        contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v3
