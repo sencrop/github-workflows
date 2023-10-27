@@ -20,7 +20,7 @@ runs:
         echo "$pwd"
         if [[ -z "$TF_VERSION" ]]; then
           TF_VERSION=$(cat main.tf | grep required_version | awk -F'"' '{print $2}')
-          if [[ ! "$TF_VERSION" =~ ^(= )?[0-9]\.[0-9]\.[0-9]$ ]]; then
+          if [[ ! "$TF_VERSION" =~ ^(= )?([0-9])+\.([0-9])+\.([0-9])+$ ]]; then
             echo "Unsupported terraform version format $TF_VERSION, please use strict version pinning"
             exit 1
           fi
