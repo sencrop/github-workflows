@@ -22,7 +22,7 @@ jobs:
       previous_version: ${{ steps.git_hash.outputs.PREVIOUS_REF || steps.git_tags.outputs.PREVIOUS_REF }}
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
