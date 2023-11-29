@@ -39,8 +39,9 @@ runs:
       env:
         SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN }}
 
-    - name: Track deployment in progresss on datadog
+    - name: Send deployment in progresss event to datadog
       run: |
+        set -euo pipefail
         curl --silent -X POST "https://api.datadoghq.eu/api/v1/events" \
         -H "Accept: application/json" \
         -H "Content-Type: application/json" \
@@ -64,5 +65,47 @@ runs:
         DD_API_KEY: ${{ inputs.DD_API_KEY }} 
         ENV: ${{ inputs.environment }}
         MESSAGE: ${{ inputs.service }} is being updated from version ${{ inputs.current_version }} to ${{ inputs.deployed_version }} on ${{ inputs.environment }}
+        REPOSITORY: ${{ github.repository }}
+        SERVICE: ${{ inputs.service }}
+
+    - name: Increment deployment metric in datadog
+      run: |
+        set -euo pipefail
+        action_run="$(gh api /repos/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+        start_ts=$(date -d "$(echo ${action_run} | jq -r .run_started_at)" +"%s")
+        now_ts=$(date +%s)
+        is_retry=$(if [[ $(echo "${action_run}" | jq '.run_attempt') -gt 1 ]]; then echo "true";else echo "false";fi)
+        curl --silent -X POST "https://api.datadoghq.eu/api/v2/series" \
+          -H "Accept: application/json" \
+          -H "Content-Type: application/json" \
+          -H "DD-API-KEY: ${DD_API_KEY}" \
+          -d @- << EOF
+            {
+              "series": [
+                {
+                  "metric": "sencrop.ci.deployment",
+                  "type": 1,
+                  "points": [
+                    {
+                      "timestamp": ${now_ts},
+                      "value": 1
+                    }
+                  ],
+                  "tags": [
+                    "repository:${{ github.repository }}",
+                    "env:$ENV",
+                    "environment:$ENV",
+                    "application:$SERVICE",
+                    "service:$SERVICE",
+                    "is_retry:${is_retry}"
+                  ]
+                }
+              ]
+            }
+        EOF
+      shell: bash
+      env:
+        DD_API_KEY: ${{ inputs.DD_API_KEY }}
+        ENV: ${{ inputs.environment }}
         REPOSITORY: ${{ github.repository }}
         SERVICE: ${{ inputs.service }}
