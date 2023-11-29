@@ -23,7 +23,7 @@ runs:
         start_ts=$(date -d "$(echo ${action_run} | jq -r .run_started_at)" +"%s")
         now_ts=$(date +%s)
         is_retry=$(if [[ $(echo "${action_run}" | jq '.run_attempt') -gt 1 ]]; then echo "true";else echo "false";fi)
-        curl --silent -X POST "https://api.datadoghq.eu/api/v2/series" \
+        curl --silent -X POST "https://api.datadoghq.eu/api/v1/distribution_points" \
           -H "Accept: application/json" \
           -H "Content-Type: application/json" \
           -H "DD-API-KEY: ${DD_API_KEY}" \
@@ -31,13 +31,14 @@ runs:
             {
               "series": [
                 {
-                  "metric": "sencrop.ci.deployment_time",
-                  "type": 3,
+                  "metric": "sencrop.ci.deployment_time.dist",
                   "points": [
-                    {
-                      "timestamp": ${now_ts},
-                      "value":  $(( now_ts - start_ts))
-                    }
+                    [
+                      ${now_ts},
+                      [
+                        $(( now_ts - start_ts))
+                      ]
+                    ]
                   ],
                   "tags": [
                     "repository:${{ github.repository }}",
