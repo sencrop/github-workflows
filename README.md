@@ -214,7 +214,6 @@ This action requires the `id-token: write` permission.
 ```yaml
 jobs:
   my-job:
-  my-job:
     permissions:
         id-token: write
     steps:
