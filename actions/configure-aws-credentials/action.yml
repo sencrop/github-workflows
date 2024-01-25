@@ -24,6 +24,9 @@ runs:
           echo "iam_role=$CI_IAM_ROLE" >> ${GITHUB_OUTPUT}
         fi
       shell: bash
+      env:
+        CI_IAM_ROLE: ${{ inputs.ci_iam_role }}
+
 
     - name: Configure aws credentials
       uses: aws-actions/configure-aws-credentials@v4
