@@ -22,6 +22,9 @@ on:
       docker_image_tag:
         type: string
         required: true
+      target_platforms:
+        type: string
+        default: local
       use_ssh:
         type: boolean
         default: false
@@ -86,6 +89,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           ssh: ${{ steps.set_ssh.outputs.ssh }}
+          platforms: ${{ inputs.target_platforms }}
 
       - name: Build and push (without cache)
         if: ${{ ! inputs.cache_docker_layers }}
