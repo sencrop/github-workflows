@@ -99,3 +99,4 @@ jobs:
           push: true
           tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
           ssh: ${{ steps.set_ssh.outputs.ssh }}
+          platforms: ${{ inputs.target_platforms }}
