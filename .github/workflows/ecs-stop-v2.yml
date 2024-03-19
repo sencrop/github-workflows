@@ -7,6 +7,9 @@ on:
       aws_region:
         type: string
         default: "eu-central-1"
+      ci_iam_role:
+        type: string
+        default: ""
       environment:
         type: string
         required: true
