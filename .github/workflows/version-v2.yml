@@ -30,16 +30,16 @@ jobs:
         if: "! inputs.use_tags"
         id: git_hash
         run: |
-          REF=$(git rev-parse --short HEAD)
-          PREVIOUS_REF=$(git rev-parse --short HEAD~1)
-          echo "REF=$REF" >> ${GITHUB_OUTPUT}
-          echo "PREVIOUS_REF=$PREVIOUS_REF" >> ${GITHUB_OUTPUT}
+          REF="$(git rev-parse --short HEAD)"
+          PREVIOUS_REF="$(git rev-parse --short HEAD~1)"
+          echo "REF=$REF" >> "${GITHUB_OUTPUT}"
+          echo "PREVIOUS_REF=$PREVIOUS_REF" >> "${GITHUB_OUTPUT}"
 
       - name: Get version from tags
         if: inputs.use_tags
         id: git_tags
         run: |
-          REF=${GITHUB_REF#refs/tags/}
-          PREVIOUS_REF=$(git tag -l 'v*' --sort=-v:refname | head -n2 | tail -n1)
-          echo "REF=$REF" >> ${GITHUB_OUTPUT}
-          echo "PREVIOUS_REF=$PREVIOUS_REF" >> ${GITHUB_OUTPUT}
+          REF="${GITHUB_REF#refs/tags/}"
+          PREVIOUS_REF="$(git tag -l 'v*' --sort=-v:refname | head -n2 | tail -n1)"
+          echo "REF=$REF" >> "${GITHUB_OUTPUT}"
+          echo "PREVIOUS_REF=$PREVIOUS_REF" >> "${GITHUB_OUTPUT}"
