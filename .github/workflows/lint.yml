@@ -10,3 +10,9 @@ jobs:
         uses: actions/checkout@v4
       - name: lint yaml files
         run: yamllint .github/workflows/
+      - name: Check workflow files
+        run: |
+          echo "::add-matcher::.github/actionlint-matcher.json"
+          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color
+        shell: bash
