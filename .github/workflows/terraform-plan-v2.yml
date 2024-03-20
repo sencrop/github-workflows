@@ -79,7 +79,9 @@ jobs:
       # inspired by https://blog.testdouble.com/posts/2021-12-07-elevate-your-terraform-workflow-with-github-actions/
       - name: Terraform plan
         id: plan
-        run: terraform plan -var-file="${ENV}.tfvars" -input=false -no-color -out=tfplan "${EXTRA_ARGS}"
+        run: |
+          # shellcheck disable=SC2086
+          terraform plan -var-file="${ENV}.tfvars" -input=false -no-color -out=tfplan ${EXTRA_ARGS}
 
         # 1. remove everything before the plan output
         # 2. remove github actions output
