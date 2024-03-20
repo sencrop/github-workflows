@@ -81,7 +81,7 @@ jobs:
         id: set_ssh
         if: ${{ inputs.use_ssh }}
         run: |
-          echo "ssh=main=$SSH_AUTH_SOCK" >> ${GITHUB_OUTPUT}
+          echo "ssh=main=$SSH_AUTH_SOCK" >> "${GITHUB_OUTPUT}"
 
       - name: Build and push (with cache)
         if: ${{ inputs.cache_docker_layers }}

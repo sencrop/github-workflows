@@ -71,4 +71,4 @@ jobs:
         run: terraform validate
 
       - name: Terraform apply
-        run: terraform apply -var-file=${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}
+        run: terraform apply -var-file="${ENV}.tfvars" -auto-approve -input=false "${EXTRA_ARGS}"

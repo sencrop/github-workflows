@@ -79,7 +79,7 @@ jobs:
       # inspired by https://blog.testdouble.com/posts/2021-12-07-elevate-your-terraform-workflow-with-github-actions/
       - name: Terraform plan
         id: plan
-        run: terraform plan -var-file=${ENV}.tfvars -input=false -no-color -out=tfplan ${EXTRA_ARGS}
+        run: terraform plan -var-file="${ENV}.tfvars" -input=false -no-color -out=tfplan "${EXTRA_ARGS}"
 
         # 1. remove everything before the plan output
         # 2. remove github actions output
@@ -100,10 +100,10 @@ jobs:
       - name: Put Plan in Env Var
         run: |
           sed 's|`|\\\`|g' plan.txt > safe_plan.txt
-          PLAN=$(cat safe_plan.txt)
-          echo "PLAN<<EOF" >> $GITHUB_ENV
-          echo "$PLAN" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          PLAN="$(cat safe_plan.txt)"
+          echo "PLAN<<EOF" >> "$GITHUB_ENV"
+          echo "$PLAN" >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
 
       - uses: actions/github-script@v6
         if: github.event_name == 'pull_request'

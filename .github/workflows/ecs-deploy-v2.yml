@@ -93,9 +93,9 @@ jobs:
       - name: Get current version
         id: current_version
         run: |
-          CURRENT_TASK_DEFINITION=$(aws ecs list-task-definitions | jq --arg SERVICE "$SERVICE" --arg ENVIRONMENT "$ENV" -r -c '.taskDefinitionArns[] | select(contains($SERVICE + "-" + $ENVIRONMENT))')
-          CURRENT_IMAGE_TAG=$(aws ecs describe-task-definition --task-definition $CURRENT_TASK_DEFINITION | jq --arg SERVICE "$SERVICE" -r -c '.taskDefinition.containerDefinitions[] | select(.name == $SERVICE) | .image' | cut -d':' -f2)
-          echo "image_tag=$CURRENT_IMAGE_TAG" >> $GITHUB_OUTPUT
+          CURRENT_TASK_DEFINITION="$(aws ecs list-task-definitions | jq --arg SERVICE "$SERVICE" --arg ENVIRONMENT "$ENV" -r -c '.taskDefinitionArns[] | select(contains($SERVICE + "-" + $ENVIRONMENT))')"
+          CURRENT_IMAGE_TAG="$(aws ecs describe-task-definition --task-definition "$CURRENT_TASK_DEFINITION" | jq --arg SERVICE "$SERVICE" -r -c '.taskDefinition.containerDefinitions[] | select(.name == $SERVICE) | .image' | cut -d':' -f2)"
+          echo "image_tag=$CURRENT_IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Notify deployment in progress
         uses: sencrop/github-workflows/actions/notify-deployment-in-progress@master
@@ -108,12 +108,12 @@ jobs:
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: Terraform apply
-        run: terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file=${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}
+        run: terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file="${ENV}.tfvars" -auto-approve -input=false "${EXTRA_ARGS}"
 
       - name: Wait for stabilization
         if: ${{ inputs.wait_for_stabilization }}
         run: |
-          if !(aws ecs wait services-stable --cluster "main-${ENV}" --service "${SERVICE}"); then
+          if ! (aws ecs wait services-stable --cluster "main-${ENV}" --service "${SERVICE}"); then
             echo "/!\/!\/!\ The deployment has failed to stabilize after 10 minutes !"
             echo "It likely means that this new version is crashing on start up."
             echo "You should check the logs to understand what happened: ${LOGS_URL}"
