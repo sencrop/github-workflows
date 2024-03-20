@@ -108,7 +108,9 @@ jobs:
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: Terraform apply
-        run: terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file="${ENV}.tfvars" -auto-approve -input=false "${EXTRA_ARGS}"
+        run: |
+          # shellcheck disable=SC2086
+          terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file="${ENV}.tfvars" -auto-approve -input=false ${EXTRA_ARGS}
 
       - name: Wait for stabilization
         if: ${{ inputs.wait_for_stabilization }}
