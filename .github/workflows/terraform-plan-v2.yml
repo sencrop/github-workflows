@@ -101,8 +101,10 @@ jobs:
       # show the plan, so we need to remove them first
       - name: Put Plan in Env Var
         run: |
+          # shellcheck disable=SC2016
           sed 's|`|\\\`|g' plan.txt > safe_plan.txt
           PLAN="$(cat safe_plan.txt)"
+          # shellcheck disable=SC2129
           echo "PLAN<<EOF" >> "$GITHUB_ENV"
           echo "$PLAN" >> "$GITHUB_ENV"
           echo "EOF" >> "$GITHUB_ENV"
