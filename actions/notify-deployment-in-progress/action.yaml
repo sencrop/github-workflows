@@ -31,7 +31,7 @@ runs:
   using: "composite"
   steps:
     - name: Notify deployment in progress on slack
-      uses: slackapi/slack-github-action@v1.24.0
+      uses: slackapi/slack-github-action@v1.25.0
       if: inputs.environment == 'production' && inputs.slack_notify == 'true'
       with:
         channel-id: ${{ inputs.slack_channel }}
