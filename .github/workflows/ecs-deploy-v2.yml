@@ -12,7 +12,8 @@ on:
         default: ""
       docker_image_tag:
         type: string
-        required: true
+        required: false
+        description: "DEPRECATED: use version instead"
       environment:
         type: string
         required: true
@@ -35,6 +36,12 @@ on:
         type: string
         required: true
       terraform_version:
+        type: string
+        required: false
+      use_version_as_docker_image_tag:
+        type: boolean
+        default: true
+      version:
         type: string
         required: false
       wait_for_stabilization:
@@ -90,12 +97,19 @@ jobs:
       - name: Terraform validate
         run: terraform validate
 
-      - name: Get current version
-        id: current_version
+      - name: Get former version from ECS
+        if: inputs.docker_image_tag || inputs.use_version_as_docker_image_tag
+        id: ecs_lookup
         run: |
           CURRENT_TASK_DEFINITION="$(aws ecs list-task-definitions | jq --arg SERVICE "$SERVICE" --arg ENVIRONMENT "$ENV" -r -c '.taskDefinitionArns[] | select(contains($SERVICE + "-" + $ENVIRONMENT))')"
           CURRENT_IMAGE_TAG="$(aws ecs describe-task-definition --task-definition "$CURRENT_TASK_DEFINITION" | jq --arg SERVICE "$SERVICE" -r -c '.taskDefinition.containerDefinitions[] | select(.name == $SERVICE) | .image' | cut -d':' -f2)"
           echo "image_tag=$CURRENT_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+
+      - name: Get former version from Git
+        id: git_hash
+        if: "! (inputs.docker_image_tag || inputs.use_version_as_docker_image_tag)"
+        uses: sencrop/github-workflows/actions/look-git-hash@master
 
       - name: Notify deployment in progress
         uses: sencrop/github-workflows/actions/notify-deployment-in-progress@master
@@ -103,14 +117,29 @@ jobs:
           service: ${{ inputs.service }}
           environment: ${{ inputs.environment }}
           dd_api_key: ${{ secrets.DD_API_KEY }}
-          current_version: ${{ steps.current_version.outputs.image_tag }}
-          deployed_version: ${{ inputs.docker_image_tag }}
+          former_version: ${{ steps.ecs_lookup.outputs.image_tag || steps.git_hash.output.previous }}
+          new_version: ${{ inputs.docker_image_tag || steps.git_hash.output.current }}
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      # TODO: remove this step once docker_image_tag has been removed
+      - name: Build tf_vars (using docker_image_tag)
+        if: inputs.docker_image_tag
+        id: tf_vars_deprecated
+        run: |
+          TF_VAR_DOCKER_IMAGE_TAG="-var docker_image_tag=${{ inputs.docker_image_tag }}"
+          echo "docker_image_tag=$TF_VAR_DOCKER_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Build tf_vars (using version)
+        if: "! inputs.docker_image_tag && inputs.use_version_as_docker_image_tag"
+        id: tf_vars
+        run: |
+          TF_VAR_DOCKER_IMAGE_TAG="-var docker_image_tag=${{ inputs.version }}"
+          echo "docker_image_tag=$TF_VAR_DOCKER_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
 
       - name: Terraform apply
         run: |
-          # shellcheck disable=SC2086
-          terraform apply -var "docker_image_tag=${DOCKER_IMAGE_TAG}" -var-file="${ENV}.tfvars" -auto-approve -input=false ${EXTRA_ARGS}
+          terraform apply ${{ steps.tf_vars.output.docker_image_tag || steps.tf_vars_deprecated.output.docker_image_tag }} -var-file ${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}
 
       - name: Wait for stabilization
         if: ${{ inputs.wait_for_stabilization }}

@@ -5,16 +5,22 @@ description: "Track a deployment in progress"
 inputs:
   current_version:
     type: string
-    required: true
+    description: "DEPRECATED: use new_version instead"
   dd_api_key:
     type: string
     required: true
   deployed_version:
     type: string
-    required: true
+    description: "DEPRECATED: use former_version instead"
+  former_version:
+    type: string
+  deployed_version:
+    type: string
   environment:
     type: string
     required: true
+  new_version:
+    type: string
   service:
     type: string
     required: true
@@ -35,7 +41,7 @@ runs:
       if: inputs.environment == 'production' && inputs.slack_notify == 'true'
       with:
         channel-id: ${{ inputs.slack_channel }}
-        slack-message: ":ship: New deployment of `${{ inputs.service }}` (version `${{ inputs.deployed_version }}`) in progress (<${{ github.server_url }}/${{ github.repository }}/compare/${{ inputs.current_version }}...${{ inputs.deployed_version }}|CHANGELOG>)"
+        slack-message: ":ship: New deployment of `${{ inputs.service }}` (version `${{ inputs.new_version || inputs.deployed_version }}`) in progress (<${{ github.server_url }}/${{ github.repository }}/compare/${{ inputs.former_version || inputs.current_version }}...${{ inputs.new_version || inputs.deployed_version }}|CHANGELOG>)"
       env:
         SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN }}
 

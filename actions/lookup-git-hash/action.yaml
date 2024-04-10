@@ -1,0 +1,13 @@
+---
+name: "Lookup git hash"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Lookup Git hash
+      id: git_hash
+      run: |
+        REF="$(git rev-parse --short HEAD)"
+        PREVIOUS_REF="$(git rev-parse --short HEAD~1)"
+        echo "current=$REF" >> "${GITHUB_OUTPUT}"
+        echo "previous=$PREVIOUS_REF" >> "${GITHUB_OUTPUT}"
