@@ -11,3 +11,4 @@ runs:
           PREVIOUS_REF="$(git tag -l 'v*' --sort=-v:refname | head -n2 | tail -n1)"
           echo "current=$REF" >> "${GITHUB_OUTPUT}"
           echo "previous=$PREVIOUS_REF" >> "${GITHUB_OUTPUT}"
+      shell: bash
