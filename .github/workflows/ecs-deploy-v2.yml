@@ -41,6 +41,7 @@ on:
       use_version_as_docker_image_tag:
         type: boolean
         default: true
+        required: false
       version:
         type: string
         required: false
@@ -109,7 +110,7 @@ jobs:
       - name: Get former version from Git
         id: git_hash
         if: "! (inputs.docker_image_tag || inputs.use_version_as_docker_image_tag)"
-        uses: sencrop/github-workflows/actions/look-git-hash@master
+        uses: sencrop/github-workflows/actions/lookup-git-hash@master
 
       - name: Notify deployment in progress
         uses: sencrop/github-workflows/actions/notify-deployment-in-progress@master
