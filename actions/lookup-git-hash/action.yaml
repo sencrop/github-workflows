@@ -4,7 +4,7 @@ name: "Lookup git hash"
 runs:
   using: "composite"
   steps:
-    - name: Lookup Git hash
+    - name: Lookup current and previous Git hash
       id: git_hash
       run: |
         REF="$(git rev-parse --short HEAD)"
