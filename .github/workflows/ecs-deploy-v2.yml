@@ -118,7 +118,7 @@ jobs:
           environment: ${{ inputs.environment }}
           dd_api_key: ${{ secrets.DD_API_KEY }}
           former_version: ${{ steps.ecs_lookup.outputs.image_tag || steps.git_hash.outputs.previous }}
-          new_version: ${{ inputs.docker_image_tag || steps.git_hash.outputs.current }}
+          new_version: ${{ inputs.docker_image_tag || inputs.version }}
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       # TODO: remove this step once docker_image_tag has been removed
