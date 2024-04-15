@@ -117,8 +117,8 @@ jobs:
           service: ${{ inputs.service }}
           environment: ${{ inputs.environment }}
           dd_api_key: ${{ secrets.DD_API_KEY }}
-          former_version: ${{ steps.ecs_lookup.outputs.image_tag || steps.git_hash.output.previous }}
-          new_version: ${{ inputs.docker_image_tag || steps.git_hash.output.current }}
+          former_version: ${{ steps.ecs_lookup.outputs.image_tag || steps.git_hash.outputs.previous }}
+          new_version: ${{ inputs.docker_image_tag || steps.git_hash.outputs.current }}
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       # TODO: remove this step once docker_image_tag has been removed
@@ -139,7 +139,8 @@ jobs:
 
       - name: Terraform apply
         run: |
-          terraform apply ${{ steps.tf_vars.output.docker_image_tag || steps.tf_vars_deprecated.output.docker_image_tag }} -var-file ${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}
+          # shellcheck disable=SC2086
+          terraform apply ${{ steps.tf_vars.outputs.docker_image_tag || steps.tf_vars_deprecated.outputs.docker_image_tag }} -var-file=${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}
 
       - name: Wait for stabilization
         if: ${{ inputs.wait_for_stabilization }}
