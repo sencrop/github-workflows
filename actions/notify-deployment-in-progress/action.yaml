@@ -6,19 +6,23 @@ inputs:
   current_version:
     type: string
     description: "DEPRECATED: use new_version instead"
+    required: false
   dd_api_key:
     type: string
     required: true
   deployed_version:
     type: string
     description: "DEPRECATED: use former_version instead"
+    required: false
   former_version:
     type: string
+    required: false
   environment:
     type: string
     required: true
   new_version:
     type: string
+    required: false
   service:
     type: string
     required: true
