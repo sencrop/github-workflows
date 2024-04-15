@@ -14,8 +14,6 @@ inputs:
     description: "DEPRECATED: use former_version instead"
   former_version:
     type: string
-  deployed_version:
-    type: string
   environment:
     type: string
     required: true
