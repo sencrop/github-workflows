@@ -63,7 +63,6 @@ jobs:
       CI_IAM_ROLE: ${{ inputs.ci_iam_role }}
       DOCKER_IMAGE_TAG: ${{ inputs.docker_image_tag }}
       ENV: ${{ inputs.environment }}
-      EXTRA_ARGS: ${{ inputs.extra_args }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
       GITHUB_ACTIONS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -141,7 +140,7 @@ jobs:
       - name: Terraform apply
         run: |
           # shellcheck disable=SC2086
-          terraform apply ${{ steps.tf_vars.outputs.docker_image_tag || steps.tf_vars_deprecated.outputs.docker_image_tag }} -var-file=${ENV}.tfvars -auto-approve -input=false ${EXTRA_ARGS}
+          terraform apply ${{ steps.tf_vars.outputs.docker_image_tag || steps.tf_vars_deprecated.outputs.docker_image_tag }} -var-file=${{ inputs.environment }}.tfvars -auto-approve -input=false ${{ inputs.extra_args }}
 
       - name: Wait for stabilization
         if: ${{ inputs.wait_for_stabilization }}
