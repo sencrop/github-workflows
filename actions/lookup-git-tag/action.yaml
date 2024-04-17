@@ -1,0 +1,14 @@
+---
+name: "Lookup git tag"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Lookup current and previous Git tag
+      id: git_tag
+      run: |
+        REF="${GITHUB_REF#refs/tags/}"
+        PREVIOUS_REF="$(git tag -l 'v*' --sort=-v:refname | head -n2 | tail -n1)"
+        echo "current=$REF" >> "${GITHUB_OUTPUT}"
+        echo "previous=$PREVIOUS_REF" >> "${GITHUB_OUTPUT}"
+    shell: bash

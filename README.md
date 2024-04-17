@@ -127,11 +127,13 @@ jobs:
     uses: sencrop/github-workflows/.github/workflows/ecs-deploy-v2.yml@master
     secrets: inherit
     with:
-      docker_image_tag: tag-from-the-build-step
+      version: some-version
       environment: "preproduction or production"
       service: my-service
       slack_channel: my-ops-slack-channel
 ```
+
+If your service uses a static docker image tag you may set the flag `use_version_as_docker_image_tag` to `false`.
 
 
 ### ecs-start
