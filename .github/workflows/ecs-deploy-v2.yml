@@ -127,7 +127,7 @@ jobs:
       - name: Terraform apply
         run: |
           # shellcheck disable=SC2086
-          terraform apply ${{ steps.tf_vars.outputs.docker_image_tag || steps.tf_vars_deprecated.outputs.docker_image_tag }} -var-file=${{ inputs.environment }}.tfvars -auto-approve -input=false ${{ inputs.extra_args }}
+          terraform apply ${{ steps.tf_vars.outputs.docker_image_tag }} -var-file=${{ inputs.environment }}.tfvars -auto-approve -input=false ${{ inputs.extra_args }}
 
       - name: Wait for stabilization
         if: ${{ inputs.wait_for_stabilization }}
@@ -160,6 +160,6 @@ jobs:
         uses: slackapi/slack-github-action@v1.25.0
         with:
           channel-id: ${{ inputs.slack_channel }}
-          slack-message: ":rotating_siren: The last deployment of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) to ${{ env.ENV }} has failed (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
+          slack-message: ":rotating_siren: The last deployment of `${{ inputs.service }}` (version `${{ inputs.version }}`) to ${{ env.ENV }} has failed (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
