@@ -151,7 +151,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.25.0
         with:
           channel-id: ${{ inputs.slack_channel }}
-          slack-message: ":white_check_mark: A new version of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) has been successfully deployed to ${{ env.ENV }} (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
+          slack-message: ":white_check_mark: A new version of `${{ inputs.service }}` (version `${{ inputs.version }}`) has been successfully deployed to ${{ env.ENV }} (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
