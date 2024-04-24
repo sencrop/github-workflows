@@ -57,12 +57,11 @@ jobs:
     env:
       AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
       CI_IAM_ROLE: ${{ inputs.ci_iam_role }}
-      DOCKER_IMAGE_TAG: ${{ inputs.docker_image_tag }}
       ENV: ${{ inputs.environment }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
       GITHUB_ACTIONS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      LOGS_URL: https://app.datadoghq.eu/logs?query=service%3A${{ inputs.service }}%20version%3A${{ inputs.docker_image_tag }}%20env%3A${{ inputs.environment }}
+      LOGS_URL: https://app.datadoghq.eu/logs?query=service%3A${{ inputs.service }}%20version%3A${{ inputs.version }}%20env%3A${{ inputs.environment }}
       SERVICE: ${{ inputs.service }}
       TF_WORKSPACE: ${{ inputs.environment }}
       TF_LOG: ${{ inputs.log_level }}
@@ -94,7 +93,7 @@ jobs:
         run: terraform validate
 
       - name: Get former version from ECS
-        if: inputs.docker_image_tag || inputs.use_version_as_docker_image_tag
+        if: inputs.use_version_as_docker_image_tag
         id: ecs_lookup
         run: |
           CURRENT_TASK_DEFINITION="$(aws ecs list-task-definitions | jq --arg SERVICE "$SERVICE" --arg ENVIRONMENT "$ENV" -r -c '.taskDefinitionArns[] | select(contains($SERVICE + "-" + $ENVIRONMENT))')"
@@ -114,7 +113,7 @@ jobs:
           environment: ${{ inputs.environment }}
           dd_api_key: ${{ secrets.DD_API_KEY }}
           former_version: ${{ steps.ecs_lookup.outputs.image_tag || steps.git_hash.outputs.previous }}
-          new_version: ${{ inputs.docker_image_tag || inputs.version }}
+          new_version: ${{ inputs.version }}
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: Build tf_vars (using version)
