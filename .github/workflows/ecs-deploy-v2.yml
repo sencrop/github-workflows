@@ -10,10 +10,6 @@ on:
       ci_iam_role:
         type: string
         default: ""
-      docker_image_tag:
-        type: string
-        required: false
-        description: "DEPRECATED: use version instead"
       environment:
         type: string
         required: true
@@ -61,12 +57,11 @@ jobs:
     env:
       AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
       CI_IAM_ROLE: ${{ inputs.ci_iam_role }}
-      DOCKER_IMAGE_TAG: ${{ inputs.docker_image_tag }}
       ENV: ${{ inputs.environment }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
       GITHUB_ACTIONS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      LOGS_URL: https://app.datadoghq.eu/logs?query=service%3A${{ inputs.service }}%20version%3A${{ inputs.docker_image_tag }}%20env%3A${{ inputs.environment }}
+      LOGS_URL: https://app.datadoghq.eu/logs?query=service%3A${{ inputs.service }}%20version%3A${{ inputs.version }}%20env%3A${{ inputs.environment }}
       SERVICE: ${{ inputs.service }}
       TF_WORKSPACE: ${{ inputs.environment }}
       TF_LOG: ${{ inputs.log_level }}
@@ -98,7 +93,7 @@ jobs:
         run: terraform validate
 
       - name: Get former version from ECS
-        if: inputs.docker_image_tag || inputs.use_version_as_docker_image_tag
+        if: inputs.use_version_as_docker_image_tag
         id: ecs_lookup
         run: |
           CURRENT_TASK_DEFINITION="$(aws ecs list-task-definitions | jq --arg SERVICE "$SERVICE" --arg ENVIRONMENT "$ENV" -r -c '.taskDefinitionArns[] | select(contains($SERVICE + "-" + $ENVIRONMENT))')"
@@ -108,7 +103,7 @@ jobs:
 
       - name: Get former version from Git
         id: git_hash
-        if: "! (inputs.docker_image_tag || inputs.use_version_as_docker_image_tag)"
+        if: "!inputs.use_version_as_docker_image_tag"
         uses: sencrop/github-workflows/actions/lookup-git-hash@master
 
       - name: Notify deployment in progress
@@ -118,19 +113,11 @@ jobs:
           environment: ${{ inputs.environment }}
           dd_api_key: ${{ secrets.DD_API_KEY }}
           former_version: ${{ steps.ecs_lookup.outputs.image_tag || steps.git_hash.outputs.previous }}
-          new_version: ${{ inputs.docker_image_tag || inputs.version }}
+          new_version: ${{ inputs.version }}
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 
-      # TODO: remove this step once docker_image_tag has been removed
-      - name: Build tf_vars (using docker_image_tag)
-        if: inputs.docker_image_tag
-        id: tf_vars_deprecated
-        run: |
-          TF_VAR_DOCKER_IMAGE_TAG="-var docker_image_tag=${{ inputs.docker_image_tag }}"
-          echo "docker_image_tag=$TF_VAR_DOCKER_IMAGE_TAG" >> "$GITHUB_OUTPUT"
-
       - name: Build tf_vars (using version)
-        if: "! inputs.docker_image_tag && inputs.use_version_as_docker_image_tag"
+        if: "inputs.use_version_as_docker_image_tag"
         id: tf_vars
         run: |
           TF_VAR_DOCKER_IMAGE_TAG="-var docker_image_tag=${{ inputs.version }}"
@@ -140,7 +127,7 @@ jobs:
       - name: Terraform apply
         run: |
           # shellcheck disable=SC2086
-          terraform apply ${{ steps.tf_vars.outputs.docker_image_tag || steps.tf_vars_deprecated.outputs.docker_image_tag }} -var-file=${{ inputs.environment }}.tfvars -auto-approve -input=false ${{ inputs.extra_args }}
+          terraform apply ${{ steps.tf_vars.outputs.docker_image_tag }} -var-file=${{ inputs.environment }}.tfvars -auto-approve -input=false ${{ inputs.extra_args }}
 
       - name: Wait for stabilization
         if: ${{ inputs.wait_for_stabilization }}
@@ -164,7 +151,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.25.0
         with:
           channel-id: ${{ inputs.slack_channel }}
-          slack-message: ":white_check_mark: A new version of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) has been successfully deployed to ${{ env.ENV }} (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
+          slack-message: ":white_check_mark: A new version of `${{ inputs.service }}` (version `${{ inputs.version }}`) has been successfully deployed to ${{ env.ENV }} (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
@@ -173,6 +160,6 @@ jobs:
         uses: slackapi/slack-github-action@v1.25.0
         with:
           channel-id: ${{ inputs.slack_channel }}
-          slack-message: ":rotating_siren: The last deployment of `${{ inputs.service }}` (version `${{ inputs.docker_image_tag }}`) to ${{ env.ENV }} has failed (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
+          slack-message: ":rotating_siren: The last deployment of `${{ inputs.service }}` (version `${{ inputs.version }}`) to ${{ env.ENV }} has failed (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
