@@ -60,19 +60,15 @@ jobs:
 
 ### version
 
-This workflow will output a version for the current build. It can be either based on the commit hash (default) or on the current tag.  
+This workflow will output a version for the current build. It can be either based on the current git commit sha or the current git tag.
 You can the get use the computed version in subsequent jobs using `${{ needs.version.outputs.version }}`.
 
 ```yaml
 jobs:
   version:
-    uses: sencrop/github-workflows/.github/workflows/version-v2.yml@master
-```
-
-If you want a versiom based on the current tag set `use_tags`.
-```yaml
+    uses: sencrop/github-workflows/.github/workflows/version-v3.yml@master
     with:
-      use_tags: true
+      from: sha | tag
 ```
 
 ### docker-push
