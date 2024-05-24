@@ -30,7 +30,7 @@ on:
         required: true
       slack_channel:
         type: string
-        required: true
+        required: false
       terraform_version:
         type: string
         required: false
@@ -146,11 +146,21 @@ jobs:
           environment: ${{ inputs.environment }}
           dd_api_key: ${{ secrets.DD_API_KEY }}
 
+      - name: Find slack channel
+        if: ${{ inputs.slack_channel == '' }}
+        id: default_slack_channel
+        run: |
+          if [[ "{{ inputs.environment }}" == "production" ]]; then
+            echo "channel_id=ops" >> "$GITHUB_OUTPUT"
+          elif [[ "{{ inputs.environment }}" == "preproduction" ]]; then
+            echo "channel_id=ops-preprod" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Notify success
         if: ${{ inputs.notify_on_success }}
         uses: slackapi/slack-github-action@v1.25.0
         with:
-          channel-id: ${{ inputs.slack_channel }}
+          channel-id: ${{ inputs.slack_channel || steps.default_slack_channel.outputs.channel_id }}
           slack-message: ":white_check_mark: A new version of `${{ inputs.service }}` (version `${{ inputs.version }}`) has been successfully deployed to ${{ env.ENV }} (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -159,7 +169,7 @@ jobs:
         if: ${{ failure() }}
         uses: slackapi/slack-github-action@v1.25.0
         with:
-          channel-id: ${{ inputs.slack_channel }}
+          channel-id: ${{ inputs.slack_channel || steps.default_slack_channel.outputs.channel_id }}
           slack-message: ":rotating_siren: The last deployment of `${{ inputs.service }}` (version `${{ inputs.version }}`) to ${{ env.ENV }} has failed (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.LOGS_URL }}|Logs>)."
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
