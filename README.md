@@ -105,9 +105,9 @@ jobs:
     uses: sencrop/github-workflows/.github/workflows/docker-tag-v1.yml@master
     secrets: inherit
     with:
-      docker_image_name: your-image-name
-      docker_tag_from: the tag value of an existing image
-      docker_tag_to: the new tag value
+      image_name: your-image-name
+      image_tag_from: the tag value of an existing image
+      image_tag_to: the new tag value
 ```
 
 

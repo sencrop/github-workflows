@@ -10,13 +10,13 @@ on:
       ci_iam_role:
         type: string
         default: ""
-      docker_image_name:
+      image_name:
         type: string
         required: true
-      docker_tag_from:
+      image_tag_from:
         type: string
         required: true
-      docker_tag_to:
+      image_tag_to:
         type: string
         required: true
 
@@ -41,5 +41,5 @@ jobs:
 
       - name: Tag image
         run: |
-          MANIFEST=$(aws ecr batch-get-image --repository-name ${{ inputs.docker_image_name }} --image-ids imageTag=${{ inputs.docker_tag_from }} --output text --query 'images[].imageManifest')
-          aws ecr put-image --repository-name ${{ inputs.docker_image_name }} --image-tag ${{ inputs.docker_tag_to}} --image-manifest "$MANIFEST"
+          MANIFEST=$(aws ecr batch-get-image --repository-name ${{ inputs.image_name }} --image-ids imageTag=${{ inputs.image_tag_from }} --output text --query 'images[].imageManifest')
+          aws ecr put-image --repository-name ${{ inputs.image_name }} --image-tag ${{ inputs.image_tag_to}} --image-manifest "$MANIFEST"
