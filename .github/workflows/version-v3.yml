@@ -28,7 +28,7 @@ jobs:
 
       - name: check from input
         run: |
-          [[ "${{ inputs.from }}" == "sha" ]] || [[ "${{ inputs.from }}" = "sha" ]]
+          [[ "${{ inputs.from }}" == "sha" ]] || [[ "${{ inputs.from }}" = "tag" ]]
 
       - name: Get version from git sha
         if: inputs.from == 'sha'
