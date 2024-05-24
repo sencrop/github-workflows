@@ -92,6 +92,21 @@ If you build often your docker image you might benefit from the built in [cache 
       cache_docker_layers: true
 ```
 
+### docker-tag
+This workflow add a tag to an existing image in our elastic container repository. 
+
+```yaml
+jobs:
+  image:
+    uses: sencrop/github-workflows/.github/workflows/docker-tag-v1.yml@master
+    secrets: inherit
+    with:
+      image_name: your-image-name
+      image_tag_from: the tag value of an existing image
+      image_tag_to: the new tag value
+```
+
+
 ## ECS workflows
 
 ### terraform-plan-ecs
