@@ -7,6 +7,7 @@ on:
       from:
         type: string
         description: where to lookup the version, value can be sha or tag
+        required: true
     outputs:
       version:
         value: ${{ jobs.version.outputs.version }}
