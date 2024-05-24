@@ -33,6 +33,7 @@ on:
 jobs:
   apply:
     runs-on: ${{ inputs.self_hosted && fromJSON(format('["self-hosted","{0}"]', inputs.environment)) || 'ubuntu-latest' }}
+    environment: ${{ inputs.environment }}
     defaults:
       run:
         working-directory: ${{ inputs.working_directory }}
