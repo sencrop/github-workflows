@@ -1,5 +1,5 @@
 ---
-name: (deprecated use docker-push-v3) Docker push
+name: Docker push
 
 on:
   workflow_call:
@@ -16,10 +16,10 @@ on:
       ci_iam_role:
         type: string
         default: ""
-      docker_image_name:
+      image_name:
         type: string
         required: true
-      docker_image_tag:
+      image_tag:
         type: string
         required: true
       target_platforms:
@@ -43,8 +43,6 @@ jobs:
       AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
       AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
       CI_IAM_ROLE: ${{ inputs.ci_iam_role }}
-      DOCKER_IMAGE_NAME: ${{ inputs.docker_image_name }}
-      DOCKER_IMAGE_TAG: ${{ inputs.docker_image_tag }}
     permissions:
       id-token: write
       contents: read
@@ -89,7 +87,7 @@ jobs:
         with:
           context: ${{ inputs.build_context }}
           push: true
-          tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+          tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           ssh: ${{ steps.set_ssh.outputs.ssh }}
@@ -101,6 +99,6 @@ jobs:
         with:
           context: ${{ inputs.build_context }}
           push: true
-          tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
+          tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }}
           ssh: ${{ steps.set_ssh.outputs.ssh }}
           platforms: ${{ inputs.target_platforms }}

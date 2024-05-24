@@ -82,11 +82,11 @@ This workflow build and push a docker image to an elastic container repository.
 ```yaml
 jobs:
   image:
-    uses: sencrop/github-workflows/.github/workflows/docker-push-v2.yml@master
+    uses: sencrop/github-workflows/.github/workflows/docker-push-v3.yml@master
     secrets: inherit
     with:
-      docker_image_name: your-image-name
-      docker_image_tag: your-image-tag
+      image_name: your-image-name
+      image_tag: your-image-tag
 ```
 
 If you build often your docker image you might benefit from the built in [cache management](https://docs.docker.com/build/ci/github-actions/cache/).
