@@ -19,6 +19,13 @@ on:
       image_tag_to:
         type: string
         required: true
+      image_ready_timeout:
+        type: number
+        default: 360
+        description: how long to wait in seconds for image_name:image_tag_from to be ready
+      image_ready_retry_interval:
+        type: number
+        default: 10
 
 jobs:
   push:
@@ -38,6 +45,25 @@ jobs:
           aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
           aws_region: ${{ inputs.aws_region }}
           ci_iam_role: ${{ inputs.ci_iam_role }}
+
+      - name: Wait for tag to be available
+        run: |
+          time_elapsed=0
+          start_timestamp=$(date +"%s")
+
+          # shellcheck disable=SC2309
+          while [[ $time_elapsed -lt ${{ inputs.image_ready_timeout }} ]]; do
+            if [[ -n $(aws ecr batch-get-image --repository-name ${{ inputs.image_name }} --image-ids imageTag=${{ inputs.image_tag_from }} --output text --query 'images[].imageManifest') ]]; then
+              echo "tag ${{ inputs.image_tag_from }} is available"
+              exit 0
+            fi
+            echo "tag ${{ inputs.image_tag_from }} is not available yet, retrying in ${{ inputs.image_ready_retry_interval }} seconds"
+            sleep ${{ inputs.image_ready_retry_interval }}
+            time_elapsed=$(( $(date +"%s") - start_timestamp ))
+          done
+
+          echo "tag ${{ inputs.image_tag_from }} was not available after ${{ inputs.image_ready_timeout }}"
+          exit 1
 
       - name: Tag image
         run: |
