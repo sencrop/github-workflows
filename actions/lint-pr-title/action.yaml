@@ -15,6 +15,7 @@ runs:
         if ! [[ "$TITLE" =~ (${{ inputs.prefixes }})(\(.+\))?:.+$ ]]; then 
           echo "Invalid pull request title $TITLE"
           echo "Title must use one of the following prefix:  ${{ inputs.prefixes }}"
+          echo "Learn more at https://www.conventionalcommits.org/en/v1.0.0/"
           exit 1
         fi
       shell: bash
