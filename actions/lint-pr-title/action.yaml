@@ -12,7 +12,7 @@ runs:
   steps:
     - name: lint pull request title
       run: |
-        if ! [[ "$TITLE" =~ ^.*(${{ inputs.prefixes }})(\(.+\))?:.+$ ]]; then 
+        if ! [[ "$TITLE" =~ (${{ inputs.prefixes }})(\(.+\))?:.+$ ]]; then 
           echo "Invalid pull request title $TITLE"
           echo "Title must use one of the following prefix:  ${{ inputs.prefixes }}"
           exit 1
