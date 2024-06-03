@@ -1,11 +1,11 @@
 ---
-name: "Lookup git hash"
+name: "Lookup git sha"
 
 runs:
   using: "composite"
   steps:
-    - name: Lookup current and previous Git hash
-      id: git_hash
+    - name: Lookup current and previous Git sha
+      id: git_sha
       run: |
         REF="$(git rev-parse --short HEAD)"
         PREVIOUS_REF="$(git rev-parse --short HEAD~1)"
