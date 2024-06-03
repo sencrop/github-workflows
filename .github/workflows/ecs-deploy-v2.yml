@@ -103,9 +103,9 @@ jobs:
 
 
       - name: Get former version from Git
-        id: git_hash
+        id: git_sha
         if: "!inputs.use_version_as_docker_image_tag"
-        uses: sencrop/github-workflows/actions/lookup-git-hash@master
+        uses: sencrop/github-workflows/actions/lookup-git-sha@master
 
       - name: Notify deployment in progress
         uses: sencrop/github-workflows/actions/notify-deployment-in-progress@master
@@ -113,7 +113,7 @@ jobs:
           service: ${{ inputs.service }}
           environment: ${{ inputs.environment }}
           dd_api_key: ${{ secrets.DD_API_KEY }}
-          former_version: ${{ steps.ecs_lookup.outputs.image_tag || steps.git_hash.outputs.previous }}
+          former_version: ${{ steps.ecs_lookup.outputs.image_tag || steps.git_sha.outputs.previous }}
           new_version: ${{ inputs.version }}
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 
