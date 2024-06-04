@@ -18,8 +18,8 @@ jobs:
   version:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.git_sha.outputs.REF || steps.git_tag.outputs.REF }}
-      previous_version: ${{ steps.git_sha.outputs.PREVIOUS_REF || steps.git_tag.outputs.PREVIOUS_REF }}
+      version: ${{ steps.git_sha.outputs.current || steps.git_tag.outputs.current }}
+      previous_version: ${{ steps.git_sha.outputs.previous || steps.git_tag.outputs.previous }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
