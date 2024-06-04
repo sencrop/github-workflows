@@ -1,6 +1,12 @@
 ---
 name: "Lookup git sha"
 
+outputs:
+  current:
+    value: ${{ steps.git_sha.outputs.current }}
+  previous:
+    value: ${{ steps.git_sha.outputs.previous }}
+
 runs:
   using: "composite"
   steps:

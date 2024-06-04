@@ -1,6 +1,12 @@
 ---
 name: "Lookup git tag"
 
+outputs:
+  current:
+    value: ${{ steps.git_tag.outputs.current }}
+  previous:
+    value: ${{ steps.git_tag.outputs.previous }}
+
 runs:
   using: "composite"
   steps:
