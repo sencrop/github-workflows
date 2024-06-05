@@ -1,0 +1,59 @@
+---
+name: Deploy a preview to netlify
+
+on:
+  workflow_call:
+    inputs:
+      application:
+        type: string
+        required: true
+      version:
+        type: string
+        required: true
+      environment:
+        type: string
+        required: true
+      aws_region:
+        type: string
+        default: "eu-central-1"
+      ci_iam_role:
+        type: string
+        default: ""
+      netlify_deploy_timeout:
+        type: number
+        default: 2
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure aws credentials
+        uses: sencrop/github-workflows/actions/configure-aws-credentials@master
+        with:
+          aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+          aws_region: ${{ inputs.aws_region }}
+          ci_iam_role: ${{ inputs.ci_iam_role }}
+
+      - uses: sencrop/github-workflows/actions/download-netlify-artifact@master
+        with:
+          application: ${{ inputs.application }}-preview
+          environment: ${{ inputs.environment }}
+          s3_bucket: ${{ vars.SENCROP_PACKAGES_BUCKET }}
+          version: ${{ inputs.version }}
+
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v3
+        with:
+          publish-dir: "./build"
+          production-deploy: false
+          deploy-message: "Deploy from GitHub Actions"
+          netlify-config-path: ./netlify.toml
+          alias: ${{ inputs.application }}-preview-${{ inputs.environment }}-${{ github.event.number }}
+          enable-pull-request-comment: true
+          overwrites-pull-request-comment: true
+          enable-commit-comment: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        timeout-minutes: ${{ inputs.netlify_deploy_timeout }}

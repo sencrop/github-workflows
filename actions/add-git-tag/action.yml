@@ -1,0 +1,21 @@
+---
+name: Add git tag
+
+inputs:
+  tag:
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: Create tag
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const tagname = {{ inputs.tag }}
+          github.rest.git.createRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: `refs/tags/${context.inputs.tag}`,
+            sha: context.sha
+          })

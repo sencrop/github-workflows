@@ -69,7 +69,7 @@ runs:
         EOF
       shell: bash
       env:
-        DD_API_KEY: ${{ inputs.DD_API_KEY }} 
+        DD_API_KEY: ${{ inputs.DD_API_KEY }}
         ENV: ${{ inputs.environment }}
         MESSAGE: ${{ inputs.service }} is being updated from version ${{ inputs.current_version }} to ${{ inputs.deployed_version }} on ${{ inputs.environment }}
         REPOSITORY: ${{ github.repository }}
