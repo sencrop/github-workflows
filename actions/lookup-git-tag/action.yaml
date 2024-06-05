@@ -14,8 +14,8 @@ runs:
       id: git_tag
       run: |
         REF="${GITHUB_REF#refs/tags/}"
-        #PREVIOUS_REF="$(git tag -l 'v*' --sort=-v:refname | head -n2 | tail -n1)"
-        PREVIOUS_REF=""
+        TAGS=$(git --no-pager tag -l 'v*' --sort=-v:refname) 
+        PREVIOUS_REF=$(echo "$TAGS" | head -n2 | tail -n1)
         echo "current=$REF" >> "${GITHUB_OUTPUT}"
         echo "previous=$PREVIOUS_REF" >> "${GITHUB_OUTPUT}"
       shell: bash
