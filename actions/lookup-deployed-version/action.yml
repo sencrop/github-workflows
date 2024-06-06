@@ -1,0 +1,28 @@
+---
+name: Lookup last deployed version
+description: Lookup last deployed version for a given environment from git tags
+
+inputs:
+  environment:
+    type: string
+outputs:
+  version: ${{ steps.lookup_v_tag.outputs.version || steps.lookup_short_sha.outputs.version }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: find v tag
+      id: lookup_v_tag
+      if: inputs.environment == 'production'
+      run: |
+        last_deployed_version=$(git --no-pager tag --points-at {{ inputs.environment }} | grep v | head -n1)
+        echo "version=$last_deployed_version" >> "${GITHUB_OUTPUT}"
+      shell: bash
+
+    - name: find
+      id: lookup_short_sha
+      run: |
+        last_deployed_version=$(git rev-list -n 1 {{ inputs.environment }})
+        echo "version=$last_deployed_version" >> "${GITHUB_OUTPUT}"
+      shell: bash
+

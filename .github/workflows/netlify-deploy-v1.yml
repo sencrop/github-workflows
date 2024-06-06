@@ -1,0 +1,92 @@
+---
+name: Deploy an application to netlify
+
+on:
+  workflow_call:
+    inputs:
+      application:
+        type: string
+        required: true
+      environment:
+        type: string
+        required: true
+      version:
+        type: string
+        required: false
+      aws_region:
+        type: string
+        default: "eu-central-1"
+      ci_iam_role:
+        type: string
+        default: ""
+      netlify_deploy_timeout:
+        type: number
+        default: 2
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure aws credentials
+        uses: sencrop/github-workflows/actions/configure-aws-credentials@master
+        with:
+          aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+          aws_region: ${{ inputs.aws_region }}
+          ci_iam_role: ${{ inputs.ci_iam_role }}
+
+      - uses: sencrop/github-workflows/actions/download-netlify-artifact@master
+        with:
+          application: ${{ inputs.application }}
+          environment: ${{ inputs.environment }}
+          s3_bucket: ${{ vars.SENCROP_PACKAGES_BUCKET }}
+          version: ${{ inputs.version }}
+
+      - uses: sencrop/github-workflows/actions/lookup-deployed-version@master
+        id: deployed_version
+        with:
+          environment: ${{ inputs.environment }}
+
+      - name: Notify deployment in progress
+        uses: sencrop/github-workflows/actions/notify-deployment-in-progress@master
+        with:
+          service: ${{ inputs.application }}
+          environment: ${{ inputs.environment }}
+          dd_api_key: ${{ secrets.DD_API_KEY }}
+          former_version: ${{ steps.deployed_version.outputs.version }}
+          new_version: ${{ inputs.version }}
+          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - uses: sencrop/github-workflows/actions/add-git-tag@master
+        with:
+          tag: ${{ inputs.environment }}
+
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v3
+        with:
+          publish-dir: ./build
+          # production-branch should not be used as production deploy are triggered on release
+          production-deploy: ${{ inputs.environment == 'production' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy from GitHub Actions"
+          netlify-config-path: "./netlify.toml"
+          enable-pull-request-comment: false
+          enable-commit-comment: true
+          overwrites-pull-request-comment: false
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        timeout-minutes: ${{ inputs.netlify_deploy_timeout }}
+
+      - name: Track deployment time
+        uses: sencrop/github-workflows/actions/track-deployment-time@master
+        with:
+          service: ${{ inputs.application }}
+          environment: ${{ inputs.environment }}
+          dd_api_key: ${{ secrets.DD_API_KEY }}
