@@ -12,7 +12,10 @@ on:
         required: true
       version:
         type: string
-        required: false
+        required: true
+      packages_bucket:
+        type: string
+        required: true
       aws_region:
         type: string
         default: "eu-central-1"
@@ -45,7 +48,7 @@ jobs:
         with:
           application: ${{ inputs.application }}
           environment: ${{ inputs.environment }}
-          s3_bucket: ${{ vars.SENCROP_PACKAGES_BUCKET }}
+          s3_bucket: ${{ inputs.packages_bucket }}
           version: ${{ inputs.version }}
 
       - uses: sencrop/github-workflows/actions/lookup-deployed-version@master
