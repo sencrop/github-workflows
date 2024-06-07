@@ -13,6 +13,9 @@ on:
       environment:
         type: string
         required: true
+      packages_bucket:
+        type: string
+        required: true
       aws_region:
         type: string
         default: "eu-central-1"
@@ -38,7 +41,7 @@ jobs:
         with:
           application: ${{ inputs.application }}-preview
           environment: ${{ inputs.environment }}
-          s3_bucket: ${{ vars.SENCROP_PACKAGES_BUCKET }}
+          s3_bucket: ${{ inputs.packages_bucket }}
           version: ${{ inputs.version }}
 
       - name: Deploy to Netlify

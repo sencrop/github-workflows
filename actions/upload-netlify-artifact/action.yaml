@@ -4,20 +4,17 @@ name: Upload a netlify artifact directory
 inputs:
   application:
     type: string
-  environment:
-    type: string
   s3_bucket:
     type: string
   version:
     type: string
-  dir:
+  local_dir:
     type: string
-    default: "./build"
 
 runs:
   using: "composite"
   steps:
     - name: Upload build output
       run: |
-        aws s3 sync ${{ inputs.dir }} s3://${{ inputs.s3_bucket }}/netlify/${{ inputs.application }}/${{ inputs.environment }}/${{ inputs.version }}
+        aws s3 sync ${{ inputs.local_dir }} s3://${{ inputs.s3_bucket }}/netlify/${{ inputs.application }}/${{ inputs.version }}
       shell: bash
