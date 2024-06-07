@@ -44,7 +44,7 @@ jobs:
           aws_region: ${{ inputs.aws_region }}
           ci_iam_role: ${{ inputs.ci_iam_role }}
 
-      - uses: sencrop/github-workflows/actions/download-netlify-artifact@master
+      - uses: sencrop/github-workflows/actions/download-artifact@master
         with:
           application: ${{ inputs.application }}
           s3_bucket: ${{ inputs.s3_bucket }}

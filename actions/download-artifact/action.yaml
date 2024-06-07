@@ -1,5 +1,5 @@
 ---
-name: Download a netlify artifact directory
+name: Download an artifact to a local directory
 
 inputs:
   application:
@@ -16,5 +16,5 @@ runs:
   steps:
     - name: Download build output
       run: |
-        aws s3 sync s3://${{ inputs.s3_bucket }}/netlify/${{ inputs.application }}/${{ inputs.version }} ${{ inputs.local_dir }}
+        aws s3 sync s3://${{ inputs.s3_bucket }}/${{ inputs.application }}/${{ inputs.version }} ${{ inputs.local_dir }}
       shell: bash
