@@ -37,17 +37,18 @@ jobs:
           aws_region: ${{ inputs.aws_region }}
           ci_iam_role: ${{ inputs.ci_iam_role }}
 
-      - uses: sencrop/github-workflows/actions/download-artifact@master
+      - name: Download build artifact
+        uses: sencrop/github-workflows/actions/download-artifact@master
         with:
           application: ${{ inputs.application }}
-          environment: ${{ inputs.environment }}
           s3_bucket: ${{ inputs.s3_bucket }}
           version: ${{ inputs.version }}
+          local_dir: ./build
 
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v3
         with:
-          publish-dir: "./build"
+          publish-dir: ./build
           production-deploy: false
           deploy-message: "Deploy from GitHub Actions"
           netlify-config-path: ./netlify.toml
