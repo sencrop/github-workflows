@@ -47,9 +47,9 @@ jobs:
       - uses: sencrop/github-workflows/actions/download-netlify-artifact@master
         with:
           application: ${{ inputs.application }}
-          environment: ${{ inputs.environment }}
           s3_bucket: ${{ inputs.packages_bucket }}
           version: ${{ inputs.version }}
+          local_dir: ./build
 
       - uses: sencrop/github-workflows/actions/lookup-deployed-version@master
         id: deployed_version
