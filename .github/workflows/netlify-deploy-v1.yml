@@ -35,6 +35,12 @@ jobs:
       contents: read
 
     steps:
+      - name: Validate production version format
+        if: ${{ inputs.environment == 'production' }}
+        run: |
+          echo "Validating that production version has a valid format (must be v{major}.{minor}.{patch})"
+          echo "${{ inputs.version }}" | grep -P '^v[0-9]\.[0-9]\.[0-9]'
+
       - uses: actions/checkout@v4
 
       - name: Configure aws credentials
