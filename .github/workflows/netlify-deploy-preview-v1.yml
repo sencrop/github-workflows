@@ -13,6 +13,9 @@ on:
       environment:
         type: string
         required: true
+      netlify_site_id:
+        type: string
+        required: true
       s3_bucket:
         type: string
         required: true
@@ -68,5 +71,5 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_SITE_ID: ${{ inputs.netlify_site_id }}
         timeout-minutes: ${{ inputs.netlify_deploy_timeout }}
