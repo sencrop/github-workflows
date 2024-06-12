@@ -34,7 +34,8 @@ jobs:
       actions: write
       id-token: write
       contents: write
-
+      pull-requests: write
+      statuses: write
     steps:
       - name: Validate production version format
         if: ${{ inputs.environment == 'production' }}
