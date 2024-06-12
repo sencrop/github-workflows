@@ -29,7 +29,7 @@ on:
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: preview-${{ inputs.environment }}
     permissions:
       actions: write
       id-token: write
