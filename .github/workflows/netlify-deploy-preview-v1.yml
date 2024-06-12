@@ -16,12 +16,6 @@ on:
       s3_bucket:
         type: string
         required: true
-      netlify_site_id:
-        type: string
-        required: true
-      netlify_auth_token:
-        type: string
-        required: true
       aws_region:
         type: string
         default: "eu-central-1"
@@ -35,6 +29,7 @@ on:
 jobs:
   deploy-preview:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     permissions:
       actions: write
       id-token: write
@@ -73,6 +68,6 @@ jobs:
           enable-commit-comment: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
-          NETLIFY_AUTH_TOKEN: ${{ inputs.netlify_auth_token }}
-          NETLIFY_SITE_ID: ${{ inputs.netlify_site_id }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ vars.NETLIFY_SITE_ID }}
         timeout-minutes: ${{ inputs.netlify_deploy_timeout }}
