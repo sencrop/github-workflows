@@ -16,6 +16,12 @@ on:
       s3_bucket:
         type: string
         required: true
+      netlify_site_id:
+        type: string
+        required: true
+      netlify_auth_token:
+        type: string
+        required: true
       aws_region:
         type: string
         default: "eu-central-1"
@@ -60,7 +66,8 @@ jobs:
           version: ${{ inputs.version }}
           local_dir: ./build
 
-      - uses: sencrop/github-workflows/actions/lookup-deployed-version@master
+      - name: Lookup deployed version
+        uses: sencrop/github-workflows/actions/lookup-deployed-version@master
         id: deployed_version
         with:
           environment: ${{ inputs.environment }}
@@ -75,7 +82,8 @@ jobs:
           new_version: ${{ inputs.version }}
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 
-      - uses: sencrop/github-workflows/actions/add-git-tag@master
+      - name: Add environment tag
+        uses: sencrop/github-workflows/actions/add-git-tag@master
         with:
           tag: ${{ inputs.environment }}
 
@@ -83,8 +91,7 @@ jobs:
         uses: nwtgck/actions-netlify@v3
         with:
           publish-dir: ./build
-          # production-branch should not be used as production deploy are triggered on release
-          production-deploy: ${{ inputs.environment == 'production' }}
+          production-deploy: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
           deploy-message: "Deploy from GitHub Actions"
           netlify-config-path: "./netlify.toml"
@@ -94,8 +101,8 @@ jobs:
           enable-github-deployment: true
           github-deployment-environment: ${{ inputs.environment }}
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_AUTH_TOKEN: ${{ inputs.netlify_auth_token }}
+          NETLIFY_SITE_ID: ${{ inputs.netlify_site_id }}
         timeout-minutes: ${{ inputs.netlify_deploy_timeout }}
 
       - name: Track deployment time

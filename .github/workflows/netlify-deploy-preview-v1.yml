@@ -13,10 +13,13 @@ on:
       environment:
         type: string
         required: true
+      s3_bucket:
+        type: string
+        required: true
       netlify_site_id:
         type: string
         required: true
-      s3_bucket:
+      netlify_auth_token:
         type: string
         required: true
       aws_region:
@@ -70,6 +73,6 @@ jobs:
           enable-commit-comment: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_AUTH_TOKEN: ${{ inputs.netlify_auth_token }}
           NETLIFY_SITE_ID: ${{ inputs.netlify_site_id }}
         timeout-minutes: ${{ inputs.netlify_deploy_timeout }}
