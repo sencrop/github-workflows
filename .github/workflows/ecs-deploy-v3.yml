@@ -83,11 +83,16 @@ jobs:
         if: ${{ inputs.slack_channel == '' }}
         id: default_slack_channel
         run: |
-          if [[ "{{ inputs.environment }}" == "production" ]]; then
+          if [[ "$environment" == "production" ]]; then
             echo "channel_id=ops" >> "$GITHUB_OUTPUT"
-          elif [[ "{{ inputs.environment }}" == "preproduction" ]]; then
+          elif [[ "$environment" == "preproduction" ]]; then
             echo "channel_id=ops-preprod" >> "$GITHUB_OUTPUT"
+          else
+            echo "unknown environment: $environment"
+            exit 1
           fi
+        env:
+          environment: ${{ inputs.environment }}
 
       - name: Configure aws credentials
         uses: sencrop/github-workflows/actions/configure-aws-credentials@master
