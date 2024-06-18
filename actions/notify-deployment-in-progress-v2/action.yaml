@@ -1,0 +1,67 @@
+---
+name: "Track deployment"
+description: "Track a deployment in progress"
+
+inputs:
+  application:
+    type: string
+    required: true
+  dd_api_key:
+    type: string
+    required: true
+  former_version:
+    type: string
+    required: false
+  environment:
+    type: string
+    required: true
+  new_version:
+    type: string
+    required: false
+  slack_bot_token:
+    type: string
+  slack_channel:
+    type: string
+    default: "deployment-updates-prod"
+  slack_notify:
+    type: boolean
+    default: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Notify deployment in progress on slack
+      uses: slackapi/slack-github-action@v1.25.0
+      if: inputs.environment == 'production' && inputs.slack_notify == 'true'
+      with:
+        channel-id: ${{ inputs.slack_channel }}
+        slack-message: ":ship: New deployment of `${{ inputs.application }}` (version `${{ inputs.new_version || inputs.deployed_version }}`) in progress (<${{ github.server_url }}/${{ github.repository }}/compare/${{ inputs.former_version || inputs.current_version }}...${{ inputs.new_version || inputs.deployed_version }}|CHANGELOG>)"
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.SLACK_BOT_TOKEN }}
+
+    - name: Track deployment in progresss on datadog
+      run: |
+        curl --silent -X POST "https://api.datadoghq.eu/api/v1/events" \
+        -H "Accept: application/json" \
+        -H "Content-Type: application/json" \
+        -H "DD-API-KEY: ${DD_API_KEY}" \
+        -d @- << EOF
+        {
+          "title": "Deployment in progress on $APPLICATION",
+          "text": "$MESSAGE",
+          "tags": [
+            "operation:deployment",
+            "repository:${{ github.repository }}",
+            "env:$ENV",
+            "environment:$ENV",
+            "application:$SERVICE"
+          ]
+        }
+        EOF
+      shell: bash
+      env:
+        DD_API_KEY: ${{ inputs.DD_API_KEY }}
+        ENV: ${{ inputs.environment }}
+        MESSAGE: ${{ inputs.application }} is being updated from version ${{ inputs.current_version }} to ${{ inputs.deployed_version }} on ${{ inputs.environment }}
+        REPOSITORY: ${{ github.repository }}
+        APPLICATION: ${{ inputs.application }}

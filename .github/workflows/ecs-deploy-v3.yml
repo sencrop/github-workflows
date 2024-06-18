@@ -1,0 +1,182 @@
+---
+name: Deploy a standard ECS application
+
+on:
+  workflow_call:
+    inputs:
+      application:
+        type: string
+        required: true
+      aws_region:
+        type: string
+        default: "eu-central-1"
+      ci_iam_role:
+        type: string
+        default: ""
+      environment:
+        type: string
+        required: true
+      extra_args:
+        type: string
+        default: ""
+      log_level:
+        type: string
+        default: "INFO"
+      notify_on_success:
+        type: boolean
+        default: false
+      self_hosted:
+        type: boolean
+        default: false
+      slack_channel:
+        type: string
+        required: false
+      terraform_version:
+        type: string
+        required: false
+      use_version_as_docker_image_tag:
+        type: boolean
+        default: true
+        required: false
+      version:
+        type: string
+        required: false
+      wait_for_stabilization:
+        type: boolean
+        default: true
+      working_directory:
+        type: string
+        default: "./infra/terraform"
+
+jobs:
+  deploy:
+    runs-on: ${{ inputs.self_hosted && fromJSON(format('["self-hosted","{0}"]', inputs.environment)) || 'ubuntu-latest' }}
+    environment: ${{ inputs.environment }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+    env:
+      AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
+      CI_IAM_ROLE: ${{ inputs.ci_iam_role }}
+      ENV: ${{ inputs.environment }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
+      GITHUB_ACTIONS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      APPLICATION_LOGS_URL: https://app.datadoghq.eu/logs?query=application%3A${{ inputs.application }}%20version%3A${{ inputs.version }}%20env%3A${{ inputs.environment }}
+      TF_WORKSPACE: ${{ inputs.environment }}
+      TF_LOG: ${{ inputs.log_level }}
+    permissions:
+      actions: write
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate production version format
+        if: ${{ inputs.environment == 'production' }}
+        run: |
+          echo "Validating that production version has a valid format (must be v{major}.{minor}.{patch})"
+          echo "${{ inputs.version }}" | grep -P '^v[0-9]+\.[0-9]+\.[0-9]+$'
+
+      - name: Find slack channel
+        if: ${{ inputs.slack_channel == '' }}
+        id: default_slack_channel
+        run: |
+          if [[ "{{ inputs.environment }}" == "production" ]]; then
+            echo "channel_id=ops" >> "$GITHUB_OUTPUT"
+          elif [[ "{{ inputs.environment }}" == "preproduction" ]]; then
+            echo "channel_id=ops-preprod" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure aws credentials
+        uses: sencrop/github-workflows/actions/configure-aws-credentials@master
+        with:
+          aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+          aws_region: ${{ inputs.aws_region }}
+          ci_iam_role: ${{ inputs.ci_iam_role }}
+
+      - name: Terraform setup
+        uses: sencrop/github-workflows/actions/setup-terraform@master
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+          working_directory: ${{ inputs.working_directory }}
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Lookup deployed version
+        uses: sencrop/github-workflows/actions/lookup-deployed-version@master
+        id: deployed_version
+        with:
+          environment: ${{ inputs.environment }}
+
+      - name: Notify deployment in progress
+        uses: sencrop/github-workflows/actions/notify-deployment-in-progress-v2@jerome/ecs-deploy-v3
+        with:
+          application: ${{ inputs.application }}
+          environment: ${{ inputs.environment }}
+          dd_api_key: ${{ secrets.DD_API_KEY }}
+          former_version: ${{ steps.deployed_version.outputs.version }}
+          new_version: ${{ inputs.version }}
+          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Build tf_vars (using version)
+        if: "inputs.use_version_as_docker_image_tag"
+        id: tf_vars
+        run: |
+          TF_VAR_DOCKER_IMAGE_TAG="-var docker_image_tag=${{ inputs.version }}"
+          echo "docker_image_tag=$TF_VAR_DOCKER_IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Add environment tag
+        uses: sencrop/github-workflows/actions/add-git-tag@master
+        with:
+          tag: ${{ inputs.environment }}
+
+      - name: Terraform apply
+        run: |
+          # shellcheck disable=SC2086
+          terraform apply ${{ steps.tf_vars.outputs.docker_image_tag }} -var-file=${{ inputs.environment }}.tfvars -auto-approve -input=false ${{ inputs.extra_args }}
+
+      - name: Wait for stabilization
+        if: ${{ inputs.wait_for_stabilization }}
+        run: |
+          services=$(terraform output --json | jq -r '.ecs_services.value[]')
+          for service in $services; do
+            if ! (aws ecs wait services-stable --cluster "main-${ENV}" --service "${service}"); then
+              echo "/!\/!\/!\ The deployment has failed to stabilize after 10 minutes !"
+              echo "It likely means that this new version is crashing on start up."
+              echo "You should check the logs to understand what happened: https://app.datadoghq.eu/logs?query=service%3A$service%20version%3A$version%20env%3A$environment"
+              exit 1
+            else
+              echo "$service is ready"
+            fi
+          done
+        env:
+          environment: ${{ inputs.environment }}
+          version: ${{ inputs.version }}
+
+      - name: Track deployment time
+        uses: sencrop/github-workflows/actions/track-deployment-time-v2@jerome/ecs-deploy-v3
+        with:
+          application: ${{ inputs.application }}
+          environment: ${{ inputs.environment }}
+          dd_api_key: ${{ secrets.DD_API_KEY }}
+
+      - name: Notify success
+        if: ${{ inputs.notify_on_success }}
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          channel-id: ${{ inputs.slack_channel || steps.default_slack_channel.outputs.channel_id }}
+          slack-message: ":white_check_mark: A new version of `${{ inputs.application }}` (version `${{ inputs.version }}`) has been successfully deployed to ${{ inputs.environment }} (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.APPLICATION_LOGS_URL }}|Logs>)."
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Notify failure
+        if: ${{ failure() }}
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          channel-id: ${{ inputs.slack_channel || steps.default_slack_channel.outputs.channel_id }}
+          slack-message: ":rotating_siren: The last deployment of `${{ inputs.application }}` (version `${{ inputs.version }}`) to ${{ inputs.environment }} has failed (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.APPLICATION_LOGS_URL }}|Logs>)."
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
