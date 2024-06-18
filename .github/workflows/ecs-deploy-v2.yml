@@ -71,6 +71,9 @@ jobs:
       id-token: write
       contents: read
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Validate production version format
         if: ${{ inputs.environment == 'production' }}
         run: |
@@ -86,9 +89,6 @@ jobs:
           elif [[ "{{ inputs.environment }}" == "preproduction" ]]; then
             echo "channel_id=ops-preprod" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Checkout
-        uses: actions/checkout@v4
 
       - name: Configure aws credentials
         uses: sencrop/github-workflows/actions/configure-aws-credentials@master
