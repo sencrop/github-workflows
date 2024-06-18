@@ -112,7 +112,7 @@ jobs:
           environment: ${{ inputs.environment }}
 
       - name: Notify deployment in progress
-        uses: sencrop/github-workflows/actions/notify-deployment-in-progress-v2@jerome/ecs-deploy-v3
+        uses: sencrop/github-workflows/actions/notify-deployment-in-progress-v2@master
         with:
           application: ${{ inputs.application }}
           environment: ${{ inputs.environment }}
@@ -157,7 +157,7 @@ jobs:
           version: ${{ inputs.version }}
 
       - name: Track deployment time
-        uses: sencrop/github-workflows/actions/track-deployment-time-v2@jerome/ecs-deploy-v3
+        uses: sencrop/github-workflows/actions/track-deployment-time-v2@master
         with:
           application: ${{ inputs.application }}
           environment: ${{ inputs.environment }}

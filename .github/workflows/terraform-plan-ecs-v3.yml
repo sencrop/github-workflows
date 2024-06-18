@@ -73,7 +73,7 @@ jobs:
         uses: sencrop/github-workflows/actions/lookup-deployed-version@master
         id: deployed_version
         with:
-          environment: ${{ inputs.environment }}
+          environment: ${{ matrix.environment }}
 
       - name: Terraform setup
         uses: sencrop/github-workflows/actions/setup-terraform@master
@@ -92,7 +92,7 @@ jobs:
         id: plan
         run: |
           # shellcheck disable=SC2086
-          terraform plan -var docker_image_tag="${{ steps.deployed_version.outputs.version || "undefined" }}" -var-file="${ENV}.tfvars" -input=false -no-color -out=tfplan ${EXTRA_ARGS}
+          terraform plan -var docker_image_tag="${{ steps.deployed_version.outputs.version || 'undefined' }}" -var-file="${ENV}.tfvars" -input=false -no-color -out=tfplan ${EXTRA_ARGS}
 
         # 1. remove everything before the plan output
         # 2. remove github actions output
