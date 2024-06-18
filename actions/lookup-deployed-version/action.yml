@@ -16,18 +16,22 @@ runs:
       id: lookup_v_tag
       if: inputs.environment == 'production'
       run: |
-        if [[ $(git tag -l "${{ inputs.environment }}") ]]; then
-          last_deployed_version=$(git --no-pager tag --points-at ${{ inputs.environment }} | grep v | head -n1)
+        if [[ $(git tag -l "$environment") ]]; then
+          last_deployed_version=$(git --no-pager tag --points-at "$environment" | grep v | head -n1)
           echo "version=$last_deployed_version" >> "${GITHUB_OUTPUT}"
         fi
+      env:
+        environment: ${{ inputs.environment }}
       shell: bash
 
     - name: find
       id: lookup_short_sha
       run: |
-        if [[ $(git tag -l "${{ inputs.environment }}") ]]; then
-          last_deployed_version=$(git rev-list -n 1 ${{ inputs.environment }})
+        if [[ $(git tag -l "$environment") ]]; then
+          last_deployed_version=$(git rev-list -n 1 "$environment" | xargs git rev-parse --short)
           echo "version=$last_deployed_version" >> "${GITHUB_OUTPUT}"
         fi
+      env:
+        environment: ${{ inputs.environment }}
       shell: bash
 
