@@ -3,10 +3,21 @@ name: Manage releases using release-please
 
 on:
   workflow_call:
+    outputs:
+      pr_created:
+        value: ${{ jobs.release-please.outputs.prs_created }}
+      releases_created:
+        value: ${{ jobs.release-please.outputs.releases_created }}
+      pr:
+        value: ${{ jobs.release-please.outputs.pr }}
 
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      prs_created: ${{ steps.release_please.outputs.prs_created }}
+      releases_created: ${{ steps.release_please.outputs.prs_created }}
+      pr: ${{ steps.release_please.outputs.pr }}
     permissions:
       contents: write
       pull-requests: write
@@ -70,6 +81,7 @@ jobs:
           echo "token=$token" >> "$GITHUB_OUTPUT"
 
       - name: Run release-please
+        id: release_please
         uses: googleapis/release-please-action@v4
         with:
           token: ${{ steps.app_token.outputs.token }}
