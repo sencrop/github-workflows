@@ -54,7 +54,7 @@ runs:
             "repository:${{ github.repository }}",
             "env:$ENV",
             "environment:$ENV",
-            "application:$SERVICE"
+            "application:$APPLICATION"
           ]
         }
         EOF
