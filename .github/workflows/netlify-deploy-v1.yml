@@ -70,9 +70,9 @@ jobs:
           environment: ${{ inputs.environment }}
 
       - name: Notify deployment in progress
-        uses: sencrop/github-workflows/actions/notify-deployment-in-progress@master
+        uses: sencrop/github-workflows/actions/notify-deployment-in-progress-v2@master
         with:
-          service: ${{ inputs.application }}
+          application: ${{ inputs.application }}
           environment: ${{ inputs.environment }}
           dd_api_key: ${{ secrets.DD_API_KEY }}
           former_version: ${{ steps.deployed_version.outputs.version }}
@@ -103,8 +103,8 @@ jobs:
         timeout-minutes: ${{ inputs.netlify_deploy_timeout }}
 
       - name: Track deployment time
-        uses: sencrop/github-workflows/actions/track-deployment-time@master
+        uses: sencrop/github-workflows/actions/track-deployment-time-v2@master
         with:
-          service: ${{ inputs.application }}
+          application: ${{ inputs.application }}
           environment: ${{ inputs.environment }}
           dd_api_key: ${{ secrets.DD_API_KEY }}
