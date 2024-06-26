@@ -1,18 +1,19 @@
-# github-workflows
-Common Github Actions workflows
+# Authentication
 
-## Authentication
-
-Workflows v2 and above are using Github/AWS OpenID connect to perform the AWS authentication ([refs](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)).  
+Workflows are using Github/AWS OpenID connect to perform the AWS authentication ([refs](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)).  
 If your repository needs to access AWS you will need to create a dedicated CI profile in [infra-ci](https://github.com/sencrop/infra-ci).
 
 # Standard workflows
-### General purpose
+## General purpose
 
 ### Version
 
-This workflow will output a version for the current build. It can be either based on the current git commit sha or the current git tag.
-You can the get use the computed version in subsequent jobs using `${{ needs.version.outputs.version }}`.
+This workflow will output a version for the current build:
+- `sha` will compute the short git sha of the current commit
+- `tag` will fetch the tag at the current commit
+
+Typically `sha` versions are used for preproduction/staging while `tag` versions are used for production.
+
 
 ```yaml
 jobs:
@@ -21,6 +22,8 @@ jobs:
     with:
       from: sha | tag
 ```
+
+You can use it in subsequent jobs using `${{ needs.version.outputs.version }}` and `${{ needs.version.outputs.previous_version }}`.
 
 ### Release please
 
