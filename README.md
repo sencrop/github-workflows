@@ -1,12 +1,45 @@
-# github-workflows
-Common Github Actions workflows
+# Authentication
 
-## Authentication
-
-Workflows v2 and above are using Github/AWS OpenID connect to perform the AWS authentication ([refs](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)).  
+Workflows are using Github/AWS OpenID connect to perform the AWS authentication ([refs](https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/configuring-openid-connect-in-amazon-web-services)).  
 If your repository needs to access AWS you will need to create a dedicated CI profile in [infra-ci](https://github.com/sencrop/infra-ci).
 
-## Standard workflows
+# Standard workflows
+## General purpose
+
+### Version
+
+This workflow will output a version for the current build:
+- `sha` will compute the short git sha of the current commit
+- `tag` will fetch the tag at the current commit
+
+Typically `sha` versions are used for preproduction/staging while `tag` versions are used for production.
+
+
+```yaml
+jobs:
+  version:
+    uses: sencrop/github-workflows/.github/workflows/version-v3.yml@master
+    with:
+      from: sha | tag
+```
+
+You can use it in subsequent jobs using `${{ needs.version.outputs.version }}` and `${{ needs.version.outputs.previous_version }}`.
+
+### Release please
+
+This workflow will trigger [release-please](https://github.com/googleapis/release-please).
+Pull requests and commits will be performed by the [sencrop release bot](https://github.com/apps/sencrop-release-bot).
+
+```
+jobs:
+  release-please:
+    uses: sencrop/github-workflows/.github/workflows/release-please-v1.yml@master
+    secrets: inherit
+```
+
+## Terraform workflows
+These workflows are designed for generic terraform application code.
+For ECS application managed by terraform you should look into [the dedicated workflows below](# ECS workflows).
 
 ### terraform-plan
 
@@ -58,18 +91,22 @@ jobs:
 
 ```
 
-### version
-
-This workflow will output a version for the current build. It can be either based on the current git commit sha or the current git tag.
-You can the get use the computed version in subsequent jobs using `${{ needs.version.outputs.version }}`.
+### terraform-deploy
+This workflow wraps the same logic as `terraform-apply` but adds the deployment notification and tracking logic.
 
 ```yaml
 jobs:
-  version:
-    uses: sencrop/github-workflows/.github/workflows/version-v3.yml@master
+  infra:
+    uses: sencrop/github-workflows/.github/workflows/terraform-deploy-v1.yml@master
+    secrets: inherit
     with:
-      from: sha | tag
+      application: my-application
+      environment: preproduction or production
+      version: new-version
 ```
+
+
+## Docker workflows
 
 ### docker-push
 
@@ -106,6 +143,18 @@ jobs:
       image_tag_to: the new tag value
 ```
 
+### docker-experiment
+This workflow build an experimental docker version and send the build ID to the github pull request.
+
+```yaml
+jobs:
+  image:
+    uses: sencrop/github-workflows/.github/workflows/docker-experiment-v1.yml@master
+    secrets: inherit
+    with:
+      image_name: your-image-name
+```
+
 
 ## ECS workflows
 
@@ -118,29 +167,34 @@ The main difference is that this workflow will fetch the currrently deployed doc
 ```yaml
 jobs:
   terraform:
-    uses: sencrop/github-workflows/.github/workflows/terraform-plan-ecs-v2.yml@master
+    uses: sencrop/github-workflows/.github/workflows/terraform-plan-ecs-v3.yml@master
     secrets: inherit
-    with:
-      service: my-service
-
 ```
 
 
 ### ecs-deploy
 
-This workflow will trigger a deployment of the given version of a [standard ECS fargate service](https://github.com/sencrop/terraform-modules).
+This workflow will trigger a deployment of the given version of a [standard ECS fargate application](https://github.com/sencrop/terraform-modules).
 The outcome of the deployment will be notified on slack.
+
+The infrastructure code must defined the deployed service in the `ecs_services` output.
+
+```hcl
+output "ecs_services" {
+  value = ["svc1", "svc2"]
+}
+```
 
 
 ```yaml
 jobs:
   deploy:
-    uses: sencrop/github-workflows/.github/workflows/ecs-deploy-v2.yml@master
+    uses: sencrop/github-workflows/.github/workflows/ecs-deploy-v3.yml@master
     secrets: inherit
     with:
-      version: some-version
+      version: new-version
       environment: "preproduction or production"
-      service: my-service
+      application: my-application
       slack_channel: my-ops-slack-channel
 ```
 
@@ -156,7 +210,7 @@ This workflow will start an ECS service. If the service is already running it ha
     uses: sencrop/github-workflows/.github/workflows/ecs-start-v2.yml@master
     secrets: inherit
     with:
-      service: my service
+      service: my-service
       environment: preproduction or production
 ```
 
@@ -169,7 +223,7 @@ This workflow will stop an ECS service. If the service is already stopped it has
     uses: sencrop/github-workflows/.github/workflows/ecs-stop-v2.yml@master
     secrets: inherit
     with:
-      service: my service
+      service: my-service
       environment: preproduction or production
 ```
 
@@ -182,8 +236,42 @@ This workflow will restart a running ECS service.
     uses: sencrop/github-workflows/.github/workflows/ecs-restart-v2.yml@master
     secrets: inherit
     with:
-      service: my service
+      service: my-service
       environment: preproduction or production
+```
+
+## Netlify workflows
+
+### netlify-deploy
+
+This workflow will deploy a web application to Netlify.
+
+```yaml
+jobs:
+  deploy:
+    uses: sencrop/github-workflows/.github/workflows/netlify-deploy-v1.yml@master
+    secrets: inherit
+    with:
+      application: my-application
+      version: version
+      environment: staging or production
+      s3_bucket: bucket where the artifacts are published (using the [upload-artifact](https://github.com/sencrop/github-workflows/blob/master/actions/upload-artifact/action.yaml) action)
+```
+
+### netlify-deploy-preview
+
+This workflow will deploy a web application in preview mode to Netlify.
+
+```yaml
+jobs:
+  deploy:
+    uses: sencrop/github-workflows/.github/workflows/netlify-deploy-v1.yml@master
+    secrets: inherit
+    with:
+      application: my-application
+      version: version
+      environment: staging or production
+      s3_bucket: bucket where the artifacts are published (using the [upload-artifact](https://github.com/sencrop/github-workflows/blob/master/actions/upload-artifact/action.yaml) action)
 ```
 
 ## RDS workflows
