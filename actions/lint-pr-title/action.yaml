@@ -4,15 +4,16 @@ name: "Lint pull request title"
 inputs:
   prefixes:
     type: string
-    required: true
+    required: false
     description: list of allowed prefix separated by a |
+    default: feat|fix|docs|refactor|chore|deps|ci|perf|build|style|test
 
 runs:
   using: "composite"
   steps:
     - name: lint pull request title
       run: |
-        if ! [[ "$TITLE" =~ (^${{ inputs.prefixes }})(\(.+\))?:.+$ ]]; then
+        if ! [[ "$TITLE" =~ (^$PREFIXES)(\(.+\))?:.+$ ]]; then
           echo "Invalid pull request title $TITLE"
           echo "Title must use one of the following prefix:  ${{ inputs.prefixes }}"
           echo "Learn more at https://www.conventionalcommits.org/en/v1.0.0/"
@@ -21,3 +22,4 @@ runs:
       shell: bash
       env:
         TITLE: ${{ github.event.pull_request.title }}
+        PREFIXES: ${{ inputs.prefixes }}
