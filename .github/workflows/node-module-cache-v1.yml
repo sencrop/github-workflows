@@ -1,0 +1,38 @@
+---
+name: Update node_modules cache
+
+on:
+  workflow_call:
+    inputs:
+      use_legacy_peer_deps:
+        type: boolean
+        default: false
+        description: Enable --legacy-peer-deps option
+      use_ignore_scripts:
+        type: boolean
+        default: false
+        description: Enable --ignore-scripts option
+
+jobs:
+  update_cache:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js version from package.json
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: "package.json"
+
+      - name: Set authToken for npm
+        run: |
+          npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
+
+      - name: Npm install
+        run: npm ci ${{ inputs.use_legacy_peer_deps == true && ' --legacy-peer-deps'}} ${{ inputs.use_ignore_scripts == true && ' --ignore-scripts'}}
+
+      - name: Save cache
+        uses: actions/cache/save@v4
+        with:
+          path: "**/node_modules"
+          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
