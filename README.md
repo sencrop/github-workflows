@@ -309,6 +309,49 @@ jobs:
       db_instance: my-instance-name
 ```
 
+### node-module-cache
+
+This action handles `node_modules` caching after installing dependencies for javascript projects. This has to be called
+while merging a main branch so further GitHub action execution can benefit from this cache later on.
+
+```yaml
+---
+name: Update node_modules cache
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - package-lock.json
+      - package.json
+jobs:
+  update_cache:
+    uses: sencrop/github-workflows/.github/workflows/node_modules_cache-v1.yml@master
+    with:
+      use_legacy_peer_deps: false
+      use_ignore_scripts: true
+```
+
+Once the `node_modules` cache is filled in, it can be used later on to prevent unnecessary dependencies install
+operations:
+
+```yaml
+  - name: Restore node_modules cache
+    uses: actions/cache/restore@v4
+    id: restore-cache
+    with:
+      path: "**/node_modules"
+      key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+      restore-keys: ${{ runner.os }}-npm-
+
+  - name: NPM CI Install
+    if: steps.restore-cache.outputs.cache-hit != 'true'
+    run: npm ci --ignore-scripts
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+```
+
 ## Standard actions
 
 Standard actions can be reused in any custom or standard workflows.
@@ -385,47 +428,4 @@ jobs:
         uses: sencrop/github-workflows/actions/setup-terraform@master
         with:
           working_directory: path/to/tf/directory
-```
-
-### node-module-cache
-
-This action handles `node_modules` caching after installing dependencies for javascript projects. This has to be called
-while merging a main branch so further GitHub action execution can benefit from this cache later on.
-
-```yaml
----
-name: Update node_modules cache
-
-on:
-  push:
-    branches:
-      - master
-    paths:
-      - package-lock.json
-      - package.json
-jobs:
-  update_cache:
-    uses: sencrop/github-workflows/.github/workflows/node_modules_cache-v1.yml@master
-    with:
-      use_legacy_peer_deps: false
-      use_ignore_scripts: true
-```
-
-Once the `node_modules` cache is filled in, it can be used later on to prevent unnecessary dependencies install
-operations:
-
-```yaml
-  - name: Restore node_modules cache
-    uses: actions/cache/restore@v4
-    id: restore-cache
-    with:
-      path: "**/node_modules"
-      key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
-      restore-keys: ${{ runner.os }}-npm-
-
-  - name: NPM CI Install
-    if: steps.restore-cache.outputs.cache-hit != 'true'
-    run: npm ci --ignore-scripts
-    env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
