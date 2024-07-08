@@ -29,7 +29,7 @@ jobs:
           npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
 
       - name: Npm install
-        run: npm ci ${{ inputs.use_legacy_peer_deps == true && ' --legacy-peer-deps'}} ${{ inputs.use_ignore_scripts == true && ' --ignore-scripts'}}
+        run: npm ci ${{ inputs.use_legacy_peer_deps == true && ' --legacy-peer-deps' || ''}} ${{ inputs.use_ignore_scripts == true && ' --ignore-scripts' || ''}}
 
       - name: Save cache
         uses: actions/cache/save@v4
