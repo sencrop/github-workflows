@@ -1,0 +1,32 @@
+---
+name: "NPM install dependencies with node_modules caching restore"
+description: "Install node modules dependencies while checking in cache"
+
+inputs:
+  npm_token:
+    default: ''
+    description: NPM token useful for npm registry access
+  use_legacy_peer_deps:
+    default: 'false'
+    description: Enable --legacy-peer-deps option
+  use_ignore_scripts:
+    default: 'false'
+    description: Enable --ignore-scripts option
+
+runs:
+  using: "composite"
+  steps:
+    - name: Restore node_modules cache
+      uses: actions/cache/restore@v4
+      id: restore-cache
+      with:
+        path: "**/node_modules"
+        key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+        restore-keys: ${{ runner.os }}-npm-
+
+    - name: Install node_modules (npm ci)
+      if: steps.restore-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: npm ci ${{ inputs.use_legacy_peer_deps == 'true' && ' --legacy-peer-deps' || ''}} ${{ inputs.use_ignore_scripts == 'true' && ' --ignore-scripts' || ''}}
+      env:
+        NODE_AUTH_TOKEN: ${{ inputs.npm_token }}
