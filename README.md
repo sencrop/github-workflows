@@ -430,3 +430,17 @@ jobs:
         with:
           working_directory: path/to/tf/directory
 ```
+
+### npm-ci-with-cache
+
+This action installs npm dependencies by checking first at `node_modules` cache (
+see [node-module-cache](README.md#node-module-cache)):
+
+```yaml
+- name: NPM CI Install
+  uses: sencrop/github-workflows/actions/npm-ci-with-cache@master
+  with:
+    npm_token: ${{ secrets.NPM_TOKEN }}
+    use_legacy_peer_deps: false
+    use_ignore_scripts: true
+```
