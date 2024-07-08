@@ -328,6 +328,7 @@ on:
 jobs:
   update_cache:
     uses: sencrop/github-workflows/.github/workflows/node_modules_cache-v1.yml@master
+    secrets: inherit
     with:
       use_legacy_peer_deps: false
       use_ignore_scripts: true
