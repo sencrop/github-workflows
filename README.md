@@ -335,23 +335,7 @@ jobs:
 ```
 
 Once the `node_modules` cache is filled in, it can be used later on to prevent unnecessary dependencies install
-operations:
-
-```yaml
-  - name: Restore node_modules cache
-    uses: actions/cache/restore@v4
-    id: restore-cache
-    with:
-      path: "**/node_modules"
-      key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
-      restore-keys: ${{ runner.os }}-npm-
-
-  - name: NPM CI Install
-    if: steps.restore-cache.outputs.cache-hit != 'true'
-    run: npm ci --ignore-scripts
-    env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-```
+operations (see [npm-ci-with-cache](README.md#npm-ci-with-cache)).
 
 ## Standard actions
 
