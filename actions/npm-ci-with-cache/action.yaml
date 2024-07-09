@@ -24,6 +24,11 @@ runs:
         key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
         restore-keys: ${{ runner.os }}-npm-
 
+    - name: Set authToken for npm
+      if: steps.restore-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: npm config set //registry.npmjs.org/:_authToken=${{ inputs.NPM_TOKEN }}
+
     - name: Install node_modules (npm ci)
       if: steps.restore-cache.outputs.cache-hit != 'true'
       shell: bash
