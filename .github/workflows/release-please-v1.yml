@@ -10,7 +10,7 @@ on:
         description: if true the workflow will create a release PR otherwise a github release is directly created
 
     outputs:
-      pr_created:
+      prs_created:
         value: ${{ jobs.release-please.outputs.prs_created }}
       releases_created:
         value: ${{ jobs.release-please.outputs.releases_created }}
@@ -24,9 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       prs_created: ${{ steps.release_please.outputs.prs_created }}
-      releases_created: ${{ steps.release_please.outputs.prs_created }}
+      releases_created: ${{ steps.release_please.outputs.releases_created }}
       pr: ${{ steps.release_please.outputs.pr }}
-      version: ${{ steps.release_please.outputs.tag_name }}
+      version: ${{ steps.release_please.outputs['.--major'] }}.${{ steps.release_please.outputs['.--minor'] }}.${{ steps.release_please.outputs['.--patch'] }}
     permissions:
       contents: write
       pull-requests: write
