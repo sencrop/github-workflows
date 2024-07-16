@@ -16,8 +16,6 @@ on:
         value: ${{ jobs.release-please.outputs.releases_created }}
       pr:
         value: ${{ jobs.release-please.outputs.pr }}
-      version:
-        value: ${{ jobs.release-please.outputs.version }}
 
 jobs:
   release-please:
@@ -26,7 +24,6 @@ jobs:
       prs_created: ${{ steps.release_please.outputs.prs_created }}
       releases_created: ${{ steps.release_please.outputs.releases_created }}
       pr: ${{ steps.release_please.outputs.pr }}
-      version: ${{ steps.release_please.outputs['.--major'] }}.${{ steps.release_please.outputs['.--minor'] }}.${{ steps.release_please.outputs['.--patch'] }}
     permissions:
       contents: write
       pull-requests: write
