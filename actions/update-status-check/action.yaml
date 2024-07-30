@@ -19,13 +19,14 @@ runs:
   steps:
     - name: Update status check
       run: |
-        curl -L \
+        set -x
+        curl -L --fail-with-body \
           -X POST \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer $TOKEN" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           "https://api.github.com/repos/${{ github.repository }}/statuses/$SHA" \
-          -d '{"state":"$STATUS","target_url":"${{ github.api_url }}/${{ github.repository }}/runs/${{ github.run_id }}","description":"$DESCRIPTION","context":"$CONTEXT"}'
+          -d '{"state":"'"$STATUS"'","target_url":"${{ github.api_url }}/${{ github.repository }}/runs/${{ github.run_id }}","description":"'"$DESCRIPTION"'","context":"'"$CONTEXT"'"}'
       shell: bash
       env:
         CONTEXT: ${{ inputs.context }}
