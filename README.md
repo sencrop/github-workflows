@@ -368,13 +368,13 @@ jobs:
   my-job:
     steps:
       - name: Notify deployment in progress
-        uses: sencrop/github-workflows/actions/notify-deployment-in-progress@master
+        uses: sencrop/github-workflows/actions/notify-deployment-in-progress-v2@master
         with:
           service: my-service
           environment: preproduction or production
           dd_api_key: ${{ secrets.DD_API_KEY }}
-          current_version: version N-1
-          deployed_version: version N
+          former_version: version N-1
+          new_version: version N
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 ```
 
@@ -390,9 +390,9 @@ jobs:
   my-job:
     steps:
       - name: Track deployment time
-        uses: sencrop/github-workflows/actions/track-deployment-time@master
+        uses: sencrop/github-workflows/actions/track-deployment-time-v2@master
         with:
-          service: my-service
+          application: my-app
           environment: preproduction or production
           dd_api_key: ${{ secrets.DD_API_KEY }}
 ```
@@ -408,7 +408,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Terraform setup
         uses: sencrop/github-workflows/actions/setup-terraform@master
         with:
