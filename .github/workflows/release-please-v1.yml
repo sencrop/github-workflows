@@ -8,6 +8,9 @@ on:
         type: boolean
         default: true
         description: if true the workflow will create a release PR otherwise a github release is directly created
+      runs_on:
+        type: string
+        default: ubuntu-latest
 
     outputs:
       prs_created:
@@ -19,7 +22,7 @@ on:
 
 jobs:
   release-please:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     outputs:
       prs_created: ${{ steps.release_please.outputs.prs_created }}
       releases_created: ${{ steps.release_please.outputs.releases_created }}

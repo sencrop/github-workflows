@@ -51,10 +51,13 @@ on:
       working_directory:
         type: string
         default: "./infra/terraform"
+      runs_on:
+        type: string
+        default: ubuntu-latest
 
 jobs:
   deploy:
-    runs-on: ${{ inputs.self_hosted && fromJSON(format('["self-hosted","{0}"]', inputs.environment)) || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.self_hosted && fromJSON(format('["self-hosted","{0}"]', inputs.environment)) || inputs.runs_on }}
     environment: ${{ inputs.environment }}
     defaults:
       run:

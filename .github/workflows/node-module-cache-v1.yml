@@ -12,10 +12,13 @@ on:
         type: boolean
         default: false
         description: Enable --ignore-scripts option
+      runs_on:
+        type: string
+        default: ubuntu-latest
 
 jobs:
   update_cache:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     steps:
       - uses: actions/checkout@v4
 

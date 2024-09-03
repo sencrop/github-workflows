@@ -25,10 +25,13 @@ on:
       netlify_deploy_timeout:
         type: number
         default: 2
+      runs_on:
+        type: string
+        default: ubuntu-latest
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     environment: ${{ inputs.environment }}
     permissions:
       actions: write
