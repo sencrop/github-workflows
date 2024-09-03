@@ -28,6 +28,9 @@ on:
       use_ssh:
         type: boolean
         default: false
+      runs_on:
+        type: string
+        default: ubuntu-latest
     secrets:
       OLYMPE_4_DEMETER:
         required: false
@@ -38,7 +41,7 @@ on:
 
 jobs:
   push:
-    runs-on: "ubuntu-latest"
+    runs-on: ${{ inputs.runs_on }}
     env:
       AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
       AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}

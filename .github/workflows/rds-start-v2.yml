@@ -13,10 +13,13 @@ on:
       db_instance:
         type: string
         required: true
+      runs_on:
+        type: string
+        default: ubuntu-latest
 
 jobs:
   start:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     env:
       AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
     permissions:

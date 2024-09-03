@@ -8,6 +8,9 @@ on:
         type: string
         description: where to lookup the version, value can be sha or tag
         required: true
+      runs_on:
+        type: string
+        default: ubuntu-latest
     outputs:
       version:
         value: ${{ jobs.version.outputs.version }}
@@ -16,7 +19,7 @@ on:
 
 jobs:
   version:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     outputs:
       version: ${{ steps.git_sha.outputs.current || steps.git_tag.outputs.current }}
       previous_version: ${{ steps.git_sha.outputs.previous || steps.git_tag.outputs.previous }}

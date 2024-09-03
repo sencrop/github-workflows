@@ -28,10 +28,13 @@ on:
       extra_args:
         type: string
         default: ""
+      runs_on:
+        type: string
+        default: ubuntu-latest
 
 jobs:
   plan:
-    runs-on: ${{ inputs.self_hosted && fromJSON(format('["self-hosted","{0}"]', matrix.environment)) || 'ubuntu-latest' }}
+    runs-on: ${{ inputs.self_hosted && fromJSON(format('["self-hosted","{0}"]', matrix.environment)) || inputs.runs_on }}
     defaults:
       run:
         working-directory: ${{ inputs.working_directory }}

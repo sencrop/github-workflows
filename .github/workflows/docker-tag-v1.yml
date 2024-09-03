@@ -26,10 +26,13 @@ on:
       image_ready_retry_interval:
         type: number
         default: 10
+      runs_on:
+        type: string
+        default: ubuntu-latest
 
 jobs:
   push:
-    runs-on: "ubuntu-latest"
+    runs-on: ${{ inputs.runs_on }}
     env:
       AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
     permissions:

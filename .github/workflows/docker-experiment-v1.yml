@@ -6,6 +6,9 @@ on:
       image_name:
         type: string
         required: true
+      runs_on:
+        type: string
+        default: ubuntu-latest
 
 jobs:
   image:
@@ -17,7 +20,7 @@ jobs:
       image_tag: ${{ github.run_id }}
 
   comment:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs_on }}
     needs: ["image"]
     permissions:
       contents: read
