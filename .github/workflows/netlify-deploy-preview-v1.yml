@@ -50,7 +50,7 @@ jobs:
           ci_iam_role: ${{ inputs.ci_iam_role }}
 
       - name: Download build artifact
-        uses: sencrop/github-workflows/actions/download-artifact@master
+        uses: sencrop/github-workflows/actions/download-artifact@jerome/compress-artifact-directory
         with:
           application: ${{ inputs.application }}
           s3_bucket: ${{ inputs.s3_bucket }}
