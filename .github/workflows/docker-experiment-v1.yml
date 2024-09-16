@@ -17,7 +17,7 @@ jobs:
     with:
       cache_docker_layers: true
       image_name: ${{ inputs.image_name }}
-      image_tag: ${{ github.run_id }}
+      image_tag: x${{ github.run_id }}
 
   comment:
     runs-on: ${{ inputs.runs_on }}
@@ -40,7 +40,7 @@ jobs:
               return comment.user.type === 'Bot' && comment.body.includes(commentTitle)
             })
             const output = `#### ${commentTitle}
-              Build ID: ${{ github.run_id }}
+              Build ID: x${{ github.run_id }}
               [Deploy this version](${{ github.server_url }}/${{ github.repository }}/actions/workflows/deploy.yml)
             `
             // Update a comment if it already exists
