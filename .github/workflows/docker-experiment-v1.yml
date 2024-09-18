@@ -19,6 +19,15 @@ jobs:
       image_name: ${{ inputs.image_name }}
       image_tag: x${{ github.run_id }}
 
+  add-github-tag:
+    needs: [image]
+    runs-on: ${{ inputs.runs_on }}
+    steps:
+      - name: Add environment tag
+        uses: sencrop/github-workflows/actions/add-git-tag@master
+        with:
+          tag: x${{ github.run_id }}
+
   comment:
     runs-on: ${{ inputs.runs_on }}
     needs: ["image"]

@@ -17,7 +17,7 @@ runs:
       if: inputs.environment == 'production'
       run: |
         if [[ $(git tag -l "$environment") ]]; then
-          last_deployed_version=$(git --no-pager tag --points-at "$environment" | grep v | head -n1)
+          last_deployed_version=$(git --no-pager tag --points-at "$environment" | grep '[vx]' | head -n1)
           echo "version=$last_deployed_version" >> "${GITHUB_OUTPUT}"
         fi
       env:
@@ -34,4 +34,3 @@ runs:
       env:
         environment: ${{ inputs.environment }}
       shell: bash
-
