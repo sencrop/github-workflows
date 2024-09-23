@@ -36,7 +36,7 @@ jobs:
 
       - name: Get app token
         id: app_token
-        uses: sencrop/github-workflows/actions/autheticate-github-app@master
+        uses: sencrop/github-workflows/actions/authenticate-github-app@jerome/split-github-app-authentication-test
         with:
           credentials: ${{ secrets.SENCROP_BOT_CREDENTIALS_TOKEN }}
 
