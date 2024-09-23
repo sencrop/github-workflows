@@ -16,5 +16,7 @@ runs:
   steps:
     - name: Download build output
       run: |
-        aws s3 sync s3://${{ inputs.s3_bucket }}/${{ inputs.application }}/${{ inputs.version }} ${{ inputs.local_dir }} --only-show-errors
+        aws s3 cp s3://${{ inputs.s3_bucket }}/${{ inputs.application }}/${{ inputs.version }}/artifact.tar.gz .
+        tar xzvf artifact.tar.gz ${{ inputs.local_dir }}
+        rm artifact.tar.gz
       shell: bash
