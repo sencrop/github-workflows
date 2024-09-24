@@ -34,63 +34,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # from https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app
       - name: Get app token
         id: app_token
-        env:
-          CREDENTIALS: ${{ secrets.SENCROP_BOT_CREDENTIALS_TOKEN }}
-        run: |
-          #!/usr/bin/env bash
-          set -o pipefail
-
-          if [[ -z "$CREDENTIALS" ]]; then
-            echo "missing credentials"
-            exit 1
-          fi
-
-          client_id=$(echo "$CREDENTIALS" | base64 --decode | jq -r .appId)
-          pem=$(echo "$CREDENTIALS" | base64 --decode | jq -r .privateKey)
-          installation_id=$(echo "$CREDENTIALS" | base64 --decode | jq -r .installationId)
-
-          now=$(date +%s)
-          iat=$((now - 60)) # Issues 60 seconds in the past
-          exp=$((now + 600)) # Expires 10 minutes in the future
-
-          b64enc() { openssl base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n'; }
-
-          header_json='{
-              "typ":"JWT",
-              "alg":"RS256"
-          }'
-          # Header encode
-          header=$( echo -n "${header_json}" | b64enc )
-
-          payload_json='{
-              "iat":'"${iat}"',
-              "exp":'"${exp}"',
-              "iss":'"${client_id}"'
-          }'
-          # Payload encode
-          payload=$( echo -n "${payload_json}" | b64enc )
-          #
-          # Signature
-          header_payload="${header}"."${payload}"
-          signature=$(
-              openssl dgst -sha256 -sign <(echo -n "${pem}") \
-              <(echo -n "${header_payload}") | b64enc
-          )
-          #
-          # Create JWT
-          JWT="${header_payload}"."${signature}"
-
-          # Request access token
-          token=$(curl --request POST \
-            --url "https://api.github.com/app/installations/$installation_id/access_tokens" \
-            --header "Accept: application/vnd.github+json" \
-            --header "Authorization: Bearer $JWT" \
-            --header "X-GitHub-Api-Version: 2022-11-28" | jq -r .token)
-
-          echo "token=$token" >> "$GITHUB_OUTPUT"
+        uses: sencrop/github-workflows/actions/autheticate-github-app@master
+        with:
+          credentials: ${{ secrets.SENCROP_BOT_CREDENTIALS_TOKEN }}
 
       - name: Run release-please
         if: inputs.create_pull_request
