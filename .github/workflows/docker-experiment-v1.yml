@@ -15,6 +15,7 @@ jobs:
     uses: sencrop/github-workflows/.github/workflows/docker-push-v3.yml@master
     secrets: inherit
     with:
+      runs_on: ${{ inputs.runs_on }}
       cache_docker_layers: true
       image_name: ${{ inputs.image_name }}
       image_tag: x${{ github.run_id }}
