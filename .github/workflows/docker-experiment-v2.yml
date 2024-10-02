@@ -1,5 +1,5 @@
 ---
-name: (deprecated use docker-experiment-v2) Experimental docker build
+name: Experimental docker build
 on:
   workflow_call:
     inputs:
@@ -9,16 +9,16 @@ on:
       use_ssh:
         type: boolean
         default: false
-      runs_on:
+      cpu_architecture:
         type: string
-        default: ubuntu-latest
+        description: "x86_64 or arm64"
 
 jobs:
   image:
-    uses: sencrop/github-workflows/.github/workflows/docker-push-v3.yml@master
+    uses: sencrop/github-workflows/.github/workflows/docker-push-v4.yml@master
     secrets: inherit
     with:
-      runs_on: ${{ inputs.runs_on }}
+      cpu_architecture: ${{ inputs.cpu_architecture }}
       cache_docker_layers: true
       image_name: ${{ inputs.image_name }}
       image_tag: x${{ github.run_id }}
@@ -26,7 +26,7 @@ jobs:
 
   add-github-tag:
     needs: [image]
-    runs-on: ${{ inputs.runs_on }}
+    runs-on: ubuntu-latest-arm64
     steps:
       - name: Add environment tag
         uses: sencrop/github-workflows/actions/add-git-tag@master
@@ -34,7 +34,7 @@ jobs:
           tag: x${{ github.run_id }}
 
   comment:
-    runs-on: ${{ inputs.runs_on }}
+    runs-on: ubuntu-latest-arm64
     needs: ["image"]
     permissions:
       contents: read
