@@ -6,6 +6,9 @@ on:
       image_name:
         type: string
         required: true
+      use_ssh:
+        type: boolean
+        default: false
       runs_on:
         type: string
         default: ubuntu-latest
@@ -19,6 +22,7 @@ jobs:
       cache_docker_layers: true
       image_name: ${{ inputs.image_name }}
       image_tag: x${{ github.run_id }}
+      use_ssh: ${{ inputs.use_ssh }}
 
   add-github-tag:
     needs: [image]
