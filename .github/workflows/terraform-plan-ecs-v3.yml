@@ -30,7 +30,7 @@ on:
         default: ""
       runs_on:
         type: string
-        default: ubuntu-latest
+        default: ubuntu-latest-arm64
 
 jobs:
   plan:
