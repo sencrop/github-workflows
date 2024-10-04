@@ -53,7 +53,7 @@ on:
         default: "./infra/terraform"
       runs_on:
         type: string
-        default: ubuntu-latest
+        default: ubuntu-latest-arm64
 
 jobs:
   deploy:

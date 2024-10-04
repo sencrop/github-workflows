@@ -18,7 +18,7 @@ on:
         required: true
       runs_on:
         type: string
-        default: ubuntu-latest
+        default: ubuntu-latest-arm64
 
 jobs:
   restart:
