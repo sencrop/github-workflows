@@ -125,6 +125,7 @@ jobs:
           slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: Add environment tag
+        if: github.ref_name == 'master'
         uses: sencrop/github-workflows/actions/add-git-tag@master
         with:
           tag: ${{ inputs.environment }}
