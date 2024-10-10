@@ -1,0 +1,80 @@
+---
+name: Semantic releases
+
+on:
+  workflow_call:
+    inputs:
+      runs_on:
+        type: string
+        default: ubuntu-latest
+
+jobs:
+  semantic-release:
+    runs-on: ${{ inputs.runs_on }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get app token
+        id: app_token
+        uses: sencrop/github-workflows/actions/authenticate-github-app@master
+        with:
+          credentials: ${{ secrets.SENCROP_BOT_CREDENTIALS_TOKEN }}
+
+      - name: Write .releaserc
+        run: |
+          echo '{
+            "plugins": [
+              [
+                "@semantic-release/commit-analyzer",
+                {
+                  "releaseRules": [
+                    { "type": "feat", "release": "minor" },
+                    { "type": "fix", "release": "patch" },
+                    { "type": "refactor", "release": "patch" },
+                    { "type": "chore", "release": "patch" },
+                    { "type": "docs", "release": "patch" },
+                    { "type": "deps", "release": "patch" },
+                    { "type": "ci", "release": "patch" },
+                    { "type": "perf", "release": "patch" },
+                    { "type": "build", "release": "patch" },
+                    { "type": "style", "release": "patch" },
+                    { "type": "test", "release": "patch" }
+                  ]
+                }
+              ],
+              [
+                "@semantic-release/release-notes-generator",
+                {
+                  "preset": "conventionalcommits",
+                  "presetConfig": {
+                    "types": [
+                      { "type": "feat", "section": "New features", "hidden": false },
+                      { "type": "fix", "section": "Bug fixes", "hidden": false },
+                      { "type": "chore", "section": "Miscellaneous Chores", "hidden": false },
+                      { "type": "refactor", "section": "Code refactoring", "hidden": false },
+                      { "type": "docs", "section": "Documentation", "hidden": false },
+                      { "type": "deps", "section": "Dependencies update", "hidden": false },
+                      { "type": "ci", "section": "CI configuration", "hidden": false },
+                      { "type": "perf", "section": "Performance improvements", "hidden": false },
+                      { "type": "build", "section": "Build system", "hidden": false },
+                      { "type": "style", "section": "Style improvements", "hidden": false },
+                      { "type": "test", "section": "Test improvements", "hidden": false }
+                    ]
+                  }
+                }
+              ],
+              "@semantic-release/github"
+            ]
+          }' > .releaserc
+
+      - name: Create github release only
+        uses: cycjimmy/semantic-release-action@v4.1.0
+        with:
+          extra_plugins: |
+            conventional-changelog-conventionalcommits@6.0.0
+        env:
+          GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
