@@ -38,4 +38,4 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: "**/node_modules"
-          key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-npm-${{ hashFiles('package-lock.json') }}
