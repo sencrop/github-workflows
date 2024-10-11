@@ -21,8 +21,8 @@ runs:
       id: restore-cache
       with:
         path: "**/node_modules"
-        key: ${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}
-        restore-keys: ${{ runner.os }}-npm-
+        key: ${{ runner.os }}-${{ runner.arch }}-npm-${{ hashFiles('package-lock.json') }}
+        restore-keys: ${{ runner.os }}-${{ runner.arch }}-npm-
 
     - name: Set authToken for npm
       if: steps.restore-cache.outputs.cache-hit != 'true'
