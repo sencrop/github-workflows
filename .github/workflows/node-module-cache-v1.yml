@@ -14,7 +14,7 @@ on:
         description: Enable --ignore-scripts option
       runs_on:
         type: string
-        default: ubuntu-latest
+        default: ubuntu-latest-arm64
 
 jobs:
   update_cache:
