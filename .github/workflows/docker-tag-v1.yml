@@ -75,5 +75,5 @@ jobs:
             MANIFEST=$(aws ecr batch-get-image --repository-name ${{ inputs.image_name }} --image-ids imageTag=${{ inputs.image_tag_from }} --output text --query 'images[].imageManifest')
             aws ecr put-image --repository-name ${{ inputs.image_name }} --image-tag ${{ inputs.image_tag_to }} --image-manifest "$MANIFEST"
           else
-            echo "image ${{ inputs.image_name }}" tag ${{ inputs.image_tag_to }} already exists. Skipping..."
+            echo "image ${{ inputs.image_name }} tag ${{ inputs.image_tag_to }} already exists. Skipping..."
           fi
