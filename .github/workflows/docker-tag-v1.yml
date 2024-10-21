@@ -69,6 +69,7 @@ jobs:
           exit 1
 
       - name: Tag image
+        shell: bash {0}
         run: |
           IMAGE_EXISTS=$(aws ecr describe-images --repository-name ${{ inputs.image_name }} --image-ids imageTag=${{ inputs.image_tag_to }} 2>/dev/null)
           if [[ -z "$IMAGE_EXISTS" ]]; then
