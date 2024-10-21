@@ -70,7 +70,7 @@ jobs:
 
       - name: Tag image
         run: |
-          IMAGE_EXISTS=$(aws ecr describe-images --repository-name ${{ inputs.image_name }} --image-ids imageTag=${{ inputs.image_tag_to}})
+          IMAGE_EXISTS=$(aws ecr describe-images --repository-name ${{ inputs.image_name }} --image-ids imageTag=${{ inputs.image_tag_to }} 2>/dev/null)
           if [[ -z "$IMAGE_EXISTS" ]]; then
             MANIFEST=$(aws ecr batch-get-image --repository-name ${{ inputs.image_name }} --image-ids imageTag=${{ inputs.image_tag_from }} --output text --query 'images[].imageManifest')
             aws ecr put-image --repository-name ${{ inputs.image_name }} --image-tag ${{ inputs.image_tag_to }} --image-manifest "$MANIFEST"
