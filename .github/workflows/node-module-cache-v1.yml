@@ -12,13 +12,14 @@ on:
         type: boolean
         default: false
         description: Enable --ignore-scripts option
-      runs_on:
+      cpu_architecture:
         type: string
-        default: ubuntu-latest
+        description: "x86_64 or arm64"
+
 
 jobs:
   update_cache:
-    runs-on: ${{ inputs.runs_on }}
+    runs-on: ${{ inputs.cpu_architecture == 'x86_64' && 'ubuntu-latest' || format('ubuntu-latest-{0}', inputs.cpu_architecture) }}
     steps:
       - uses: actions/checkout@v4
 
