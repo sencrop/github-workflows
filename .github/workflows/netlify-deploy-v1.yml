@@ -27,7 +27,7 @@ on:
         default: 2
       runs_on:
         type: string
-        default: ubuntu-latest
+        default: ubuntu-latest-arm64
 
 jobs:
   deploy:
