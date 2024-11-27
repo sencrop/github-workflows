@@ -28,6 +28,9 @@ on:
       use_ssh:
         type: boolean
         default: false
+      file:
+        type: string
+        required: false
     secrets:
       OLYMPE_4_DEMETER:
         required: false
@@ -82,6 +85,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ${{ inputs.build_context }}
+          file: ${{ inputs.file || format('{0}/Dockerfile', inputs.build_context) }}
           push: true
           tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }}
           cache-from: type=gha
@@ -93,6 +97,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ${{ inputs.build_context }}
+          file: ${{ inputs.file || format('{0}/Dockerfile', inputs.build_context) }}
           push: true
           tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }}
           ssh: ${{ steps.set_ssh.outputs.ssh }}
