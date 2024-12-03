@@ -91,6 +91,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           ssh: ${{ steps.set_ssh.outputs.ssh }}
+          provenance: false
 
       - name: Build and push (without cache)
         if: ${{ ! inputs.cache_docker_layers }}
@@ -101,3 +102,4 @@ jobs:
           push: true
           tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }}
           ssh: ${{ steps.set_ssh.outputs.ssh }}
+          provenance: false
