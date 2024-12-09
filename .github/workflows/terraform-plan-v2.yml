@@ -95,6 +95,7 @@ jobs:
             terraform show -no-color tfplan |\
             sed '/Terraform will perform the following actions/,$!d' |\
             sed '/^::/d' |\
+            sed 's/\${/\\${/g' |\
             sed -E 's/^([[:space:]]+)([-+])/\2\1/g'\ > plan.txt
           else
             echo "No changes. Your infrastructure matches the configuration." > plan.txt
@@ -114,8 +115,6 @@ jobs:
 
       - uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
-        env:
-          PLAN: ${{ env.PLAN }}
         with:
           script: |
             const { data: comments } = await github.rest.issues.listComments({
@@ -127,10 +126,9 @@ jobs:
             const botComment = comments.find(comment => {
               return comment.user.type === 'Bot' && comment.body.includes(commentTitle)
             })
-            const sanitizedPlan = process.env.PLAN.replace(/\$\{/g, '\\${')
             const output = `#### ${commentTitle}
             \`\`\`diff\n
-            ${sanitizedPlan}
+            ${{ env.PLAN }}
             \`\`\`
             `
             // Update a comment if it already exists
