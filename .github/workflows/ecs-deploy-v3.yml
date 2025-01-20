@@ -96,6 +96,8 @@ jobs:
             echo "channel_id=ops" >> "$GITHUB_OUTPUT"
           elif [[ "$environment" == "preproduction" ]]; then
             echo "channel_id=ops-preprod" >> "$GITHUB_OUTPUT"
+          elif [[ "$environment" == "build" ]]; then
+            echo "channel_id=ops" >> "$GITHUB_OUTPUT"
           else
             echo "unknown environment: $environment"
             exit 1
