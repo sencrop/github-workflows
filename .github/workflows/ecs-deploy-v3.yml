@@ -145,7 +145,7 @@ jobs:
           echo "docker_image_tag=$TF_VAR_DOCKER_IMAGE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Add environment tag
-        if: github.ref_name == 'master'
+        if: github.ref_name == 'master' || github.ref_type == 'tag'
         uses: sencrop/github-workflows/actions/add-git-tag@master
         with:
           tag: ${{ inputs.environment }}
