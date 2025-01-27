@@ -46,6 +46,7 @@ jobs:
       AWS_DEFAULT_REGION: ${{ inputs.aws_region }}
       AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
       CI_IAM_ROLE: ${{ inputs.ci_iam_role }}
+      IMAGE_TAG: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }}
     permissions:
       id-token: write
       contents: read
@@ -80,26 +81,37 @@ jobs:
         run: |
           echo "ssh=main=$SSH_AUTH_SOCK" >> "${GITHUB_OUTPUT}"
 
-      - name: Build and push (with cache)
+      - name: Build (with cache)
         if: ${{ inputs.cache_docker_layers }}
         uses: docker/build-push-action@v5
         with:
           context: ${{ inputs.build_context }}
           file: ${{ inputs.file || format('{0}/Dockerfile', inputs.build_context) }}
-          push: true
-          tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }}
+          load: true
+          tags: ${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           ssh: ${{ steps.set_ssh.outputs.ssh }}
           provenance: false
 
-      - name: Build and push (without cache)
+      - name: Build (without cache)
         if: ${{ ! inputs.cache_docker_layers }}
         uses: docker/build-push-action@v5
         with:
           context: ${{ inputs.build_context }}
           file: ${{ inputs.file || format('{0}/Dockerfile', inputs.build_context) }}
-          push: true
-          tags: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.eu-central-1.amazonaws.com/${{ inputs.image_name }}:${{ inputs.image_tag }}
+          load: true
+          tags: ${{ env.IMAGE_TAG }}
           ssh: ${{ steps.set_ssh.outputs.ssh }}
           provenance: false
+
+      - name: Push to ECR
+        run: |
+          #!/bin/bash
+          set -euo pipefail
+          IFS=$'\n\t'
+          if ! docker push "$IMAGE_TAG"; then
+            # the first time we try to push the repository won't exist and will be dynamically created so we retry after 30 seconds
+            sleep 30
+            docker push "$IMAGE_TAG"
+          fi
