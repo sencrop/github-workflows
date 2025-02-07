@@ -1,0 +1,30 @@
+---
+name: Lint AWS IAM policies
+
+on:
+  workflow_call:
+    inputs:
+      directory:
+        type: string
+        required: true
+      minimum_severity:
+        type: string
+        default: HIGH
+
+jobs:
+  # https://github.com/duo-labs/parliament
+  lint_policies:
+    runs-on: ubuntu-latest-arm64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          pip install parliament
+      - name: Lint AWS IAM policies
+        run: |
+          parliament --directory ${{ inputs.directory }} --include_policy_extension json --minimum_severity ${{ inputs.minimum_severity }}
