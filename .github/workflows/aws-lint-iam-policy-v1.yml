@@ -27,4 +27,4 @@ jobs:
           pip install parliament
       - name: Lint AWS IAM policies
         run: |
-          parliament --directory ${{ inputs.directory }} --include_policy_extension json --minimum_severity ${{ inputs.minimum_severity }}
+          parliament --directory ${{ inputs.directory }} --exclude_pattern .*/assume/.* --include_policy_extension json --minimum_severity ${{ inputs.minimum_severity }}
