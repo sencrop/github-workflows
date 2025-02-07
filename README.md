@@ -311,33 +311,19 @@ jobs:
       db_instance: my-instance-name
 ```
 
-### node-module-cache
+## IAM policy linter
 
-This action handles `node_modules` caching after installing dependencies for javascript projects. This has to be called
-while merging a main branch so further GitHub action execution can benefit from this cache later on.
+This action will lint a directory containing IAM policies in JSON format.
 
 ```yaml
----
-name: Update node_modules cache
-
-on:
-  push:
-    branches:
-      - master
-    paths:
-      - package-lock.json
-      - package.json
 jobs:
-  update_cache:
-    uses: sencrop/github-workflows/.github/workflows/node_modules_cache-v1.yml@master
+  lint:
+    uses: sencrop/github-workflows/.github/workflows/aws-lint-iam-policy-v1.yml@master
     secrets: inherit
     with:
-      use_legacy_peer_deps: false
-      use_ignore_scripts: true
+      directory: policies/
+      minimum_severity: MEDIUM
 ```
-
-Once the `node_modules` cache is filled in, it can be used later on to prevent unnecessary dependencies install
-operations (see [npm-ci-with-cache](README.md#npm-ci-with-cache)).
 
 ## Standard actions
 
@@ -430,3 +416,31 @@ see [node-module-cache](README.md#node-module-cache)):
     use_legacy_peer_deps: false
     use_ignore_scripts: true
 ```
+
+### node-module-cache
+
+This action handles `node_modules` caching after installing dependencies for javascript projects. This has to be called
+while merging a main branch so further GitHub action execution can benefit from this cache later on.
+
+```yaml
+---
+name: Update node_modules cache
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - package-lock.json
+      - package.json
+jobs:
+  update_cache:
+    uses: sencrop/github-workflows/.github/workflows/node_modules_cache-v1.yml@master
+    secrets: inherit
+    with:
+      use_legacy_peer_deps: false
+      use_ignore_scripts: true
+```
+
+Once the `node_modules` cache is filled in, it can be used later on to prevent unnecessary dependencies install
+operations (see [npm-ci-with-cache](README.md#npm-ci-with-cache)).
