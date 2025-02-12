@@ -1,5 +1,5 @@
 ---
-name: Upload an artifact directory to a s3 bucket
+name: Authenticate to github using a github app
 
 inputs:
   credentials:
