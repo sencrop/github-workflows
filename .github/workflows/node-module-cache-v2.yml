@@ -12,18 +12,19 @@ on:
         type: boolean
         default: false
         description: Enable --ignore-scripts option
-      cpu_architecture:
+      cpu_architectures:
         type: string
-        description: "x86_64 or arm64"
-
+        description: Array of architectures to run on (e.g., '["x86_64", "arm64"]')
 
 jobs:
   update_cache:
-    runs-on: ${{ inputs.cpu_architecture == 'x86_64' && 'ubuntu-latest' || format('ubuntu-latest-{0}', inputs.cpu_architecture) }}
-    steps:
-      - name: Deprecated warning
-        run: echo "::warning::⚠️ deprecated workflow, use node-module-cache-v2.yml instead"
+    strategy:
+      matrix:
+        cpu_architecture: ${{ fromJSON(inputs.cpu_architectures) }}
 
+    runs-on: ${{ matrix.cpu_architecture == 'x86_64' && 'ubuntu-latest' || 'ubuntu-latest-arm64' }}
+
+    steps:
       - uses: actions/checkout@v4
 
       - name: Use Node.js version from package.json
@@ -36,7 +37,7 @@ jobs:
           npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
 
       - name: Npm install
-        run: npm ci ${{ inputs.use_legacy_peer_deps == true && ' --legacy-peer-deps' || ''}} ${{ inputs.use_ignore_scripts == true && ' --ignore-scripts' || ''}}
+        run: npm ci ${{ inputs.use_legacy_peer_deps && '--legacy-peer-deps' || ''}} ${{ inputs.use_ignore_scripts && '--ignore-scripts' || ''}}
 
       - name: Save cache
         uses: actions/cache/save@v4
