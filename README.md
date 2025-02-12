@@ -435,11 +435,12 @@ on:
       - package.json
 jobs:
   update_cache:
-    uses: sencrop/github-workflows/.github/workflows/node_modules_cache-v1.yml@master
+    uses: sencrop/github-workflows/.github/workflows/node_modules_cache-v2.yml@master
     secrets: inherit
     with:
       use_legacy_peer_deps: false
       use_ignore_scripts: true
+      cpu_architectures: '["x86_64", "arm64"]'
 ```
 
 Once the `node_modules` cache is filled in, it can be used later on to prevent unnecessary dependencies install
