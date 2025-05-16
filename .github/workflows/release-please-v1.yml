@@ -25,6 +25,7 @@ jobs:
       pr: ${{ steps.release_please.outputs.pr }}
     permissions:
       contents: write
+      issues: write
       pull-requests: write
     steps:
       - name: Checkout
