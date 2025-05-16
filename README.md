@@ -32,7 +32,7 @@ and `${{ needs.version.outputs.previous_version }}`.
 ### Release please
 
 This workflow will trigger [release-please](https://github.com/googleapis/release-please).
-Pull requests and commits will be performed by the [sencrop release bot](https://github.com/apps/sencrop-release-bot).
+Pull requests and commits will be performed by the [sencrop bot](https://github.com/apps/sencrop-bot).
 
 ```
 jobs:
