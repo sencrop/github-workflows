@@ -40,9 +40,9 @@ on:
         required: false
       PROTOBUF_4_DOWNLINK_WORKER:
         required: false
-      PROTOBUF_4_DOWNLINK_STATS:
+      PROTOBUF_4_INTAKE_STATS:
         required: false
-      PROTOBUF_4_DOWNLINK_PROBES:
+      PROTOBUF_4_INTAKE_PROBES:
         required: false
 
 jobs:
