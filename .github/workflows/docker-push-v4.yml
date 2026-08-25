@@ -38,6 +38,12 @@ on:
         required: false
       SSH_PRIVATE_KEY:
         required: false
+      PROTOBUF_4_DOWNLINK_WORKER:
+        required: false
+      PROTOBUF_4_INTAKE_STATS:
+        required: false
+      PROTOBUF_4_INTAKE_PROBES:
+        required: false
 
 jobs:
   push:
@@ -73,7 +79,7 @@ jobs:
         if: ${{ inputs.use_ssh }}
         uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.OLYMPE_4_DEMETER || secrets.OLYMPE_4_SISYPHE || secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.OLYMPE_4_DEMETER || secrets.OLYMPE_4_SISYPHE || secrets.SSH_PRIVATE_KEY || secrets.PROTOBUF_4_DOWNLINK_WORKER || secrets.PROTOBUF_4_INTAKE_STATS || secrets.PROTOBUF_4_INTAKE_PROBES }}
 
       - name: Set ssh parameter
         id: set_ssh
