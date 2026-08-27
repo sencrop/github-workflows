@@ -132,20 +132,6 @@ on a role that allows twelve. Check the role with:
 aws iam get-role --role-name github-actions-my-repository --query 'Role.MaxSessionDuration'
 ```
 
-Credentials cannot outlive 12 hours, which is the AWS maximum for a role assumed through OIDC.
-
-> ⚠️ **Mind the terraform resource timeouts as well.** Providers apply their own, usually much
-> shorter than the duration of a long lived operation. The aws provider gives `aws_db_instance`
-> 80 minutes to update, for instance:
-
-```hcl
-resource "aws_db_instance" "main" {
-  timeouts {
-    update = "8h"
-  }
-}
-```
-
 ### terraform-deploy
 
 This workflow wraps the same logic as `terraform-apply` but adds the deployment notification and tracking logic.
