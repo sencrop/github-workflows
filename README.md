@@ -97,6 +97,55 @@ jobs:
 
 ```
 
+#### Long running applies
+
+Some operations (an RDS Blue/Green deployment, for instance) run for several hours. Three separate
+limits have to be raised, and the job fails if any one of them is left at its default:
+
+```yaml
+jobs:
+  terraform:
+    uses: sencrop/github-workflows/.github/workflows/terraform-apply-v2.yml@master
+    secrets: inherit
+    with:
+      environment: preproduction
+      working_directory: ./terraform
+      self_hosted: true
+      timeout_minutes: 600
+      role_duration_seconds: 43200
+```
+
+| input | why |
+| --- | --- |
+| `self_hosted: true` | Github hosted runners kill any job after 6 hours, whatever the timeout is set to. |
+| `timeout_minutes` | Defaults to 360 (the Github default). Raise it above the expected duration. |
+| `role_duration_seconds` | STS session duration, 3600 by default and 43200 (12h) at most. |
+
+##### Session duration and the IAM role
+
+`role_duration_seconds` **must not exceed the `max_session_duration` of the assumed role**, otherwise
+`AssumeRoleWithWebIdentity` is rejected and the job fails while configuring the credentials. The
+duration is not inferred from the role: without this input the action always asks for one hour, even
+on a role that allows twelve. Check the role with:
+
+```shell
+aws iam get-role --role-name github-actions-my-repository --query 'Role.MaxSessionDuration'
+```
+
+Credentials cannot outlive 12 hours, which is the AWS maximum for a role assumed through OIDC.
+
+> ⚠️ **Mind the terraform resource timeouts as well.** Providers apply their own, usually much
+> shorter than the duration of a long lived operation. The aws provider gives `aws_db_instance`
+> 80 minutes to update, for instance:
+
+```hcl
+resource "aws_db_instance" "main" {
+  timeouts {
+    update = "8h"
+  }
+}
+```
+
 ### terraform-deploy
 
 This workflow wraps the same logic as `terraform-apply` but adds the deployment notification and tracking logic.
