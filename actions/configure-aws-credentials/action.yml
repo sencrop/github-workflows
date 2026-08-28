@@ -11,6 +11,10 @@ inputs:
   ci_iam_role:
     type: string
     default: ""
+  role_duration_seconds:
+    description: "STS session duration in seconds. Max 43200 (12h), and capped by the IAM role MaxSessionDuration."
+    type: string
+    default: "3600"
 
 runs:
   using: "composite"
@@ -33,3 +37,4 @@ runs:
       with:
         aws-region: ${{ inputs.aws_region }}
         role-to-assume: arn:aws:iam::${{ inputs.aws_account_id }}:role/${{ steps.ci_identity.outputs.iam_role }}
+        role-duration-seconds: ${{ inputs.role_duration_seconds }}

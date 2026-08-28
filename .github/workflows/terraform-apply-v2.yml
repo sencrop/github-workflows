@@ -19,12 +19,18 @@ on:
       log_level:
         type: string
         default: "INFO"
+      role_duration_seconds:
+        type: number
+        default: 3600
       self_hosted:
         type: boolean
         default: false
       terraform_version:
         type: string
         required: false
+      timeout_minutes:
+        type: number
+        default: 360
       working_directory:
         type: string
         required: true
@@ -35,6 +41,7 @@ on:
 jobs:
   apply:
     runs-on: ${{ inputs.self_hosted && fromJSON(format('["self-hosted","{0}"]', inputs.environment)) || inputs.runs_on }}
+    timeout-minutes: ${{ inputs.timeout_minutes }}
     environment: ${{ inputs.environment }}
     defaults:
       run:
@@ -60,6 +67,7 @@ jobs:
           aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
           aws_region: ${{ inputs.aws_region }}
           ci_iam_role: ${{ inputs.ci_iam_role }}
+          role_duration_seconds: ${{ inputs.role_duration_seconds }}
 
       - name: Terraform setup
         uses: sencrop/github-workflows/actions/setup-terraform@master
