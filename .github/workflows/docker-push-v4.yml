@@ -32,10 +32,6 @@ on:
         type: string
         required: false
     secrets:
-      OLYMPE_4_DEMETER:
-        required: false
-      OLYMPE_4_SISYPHE:
-        required: false
       SSH_PRIVATE_KEY:
         required: false
 
@@ -73,7 +69,7 @@ jobs:
         if: ${{ inputs.use_ssh }}
         uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.OLYMPE_4_DEMETER || secrets.OLYMPE_4_SISYPHE || secrets.SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Set ssh parameter
         id: set_ssh
