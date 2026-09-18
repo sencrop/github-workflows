@@ -24,10 +24,10 @@ jobs:
       - name: Deprecated warning
         run: echo "::warning::⚠️ deprecated workflow, use node-module-cache-v2.yml instead"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Use Node.js version from package.json
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: "package.json"
 
@@ -39,7 +39,7 @@ jobs:
         run: npm ci ${{ inputs.use_legacy_peer_deps == true && ' --legacy-peer-deps' || ''}} ${{ inputs.use_ignore_scripts == true && ' --ignore-scripts' || ''}}
 
       - name: Save cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: "**/node_modules"
           key: ${{ runner.os }}-${{ runner.arch }}-npm-${{ hashFiles('package-lock.json') }}

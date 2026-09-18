@@ -25,10 +25,10 @@ jobs:
     runs-on: ${{ matrix.cpu_architecture == 'x86_64' && 'ubuntu-latest' || 'ubuntu-latest-arm64' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Use Node.js version from package.json
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version-file: "package.json"
 
@@ -40,7 +40,7 @@ jobs:
         run: npm ci ${{ inputs.use_legacy_peer_deps && '--legacy-peer-deps' || ''}} ${{ inputs.use_ignore_scripts && '--ignore-scripts' || ''}}
 
       - name: Save cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: "**/node_modules"
           key: ${{ runner.os }}-${{ runner.arch }}-npm-${{ hashFiles('package-lock.json') }}
