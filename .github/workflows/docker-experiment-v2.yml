@@ -19,7 +19,7 @@ on:
 
 jobs:
   image:
-    uses: sencrop/github-workflows/.github/workflows/docker-push-v4.yml@feat/docker-push-node-version
+    uses: sencrop/github-workflows/.github/workflows/docker-push-v4.yml@master
     secrets: inherit
     with:
       cpu_architecture: ${{ inputs.cpu_architecture }}
