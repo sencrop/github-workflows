@@ -6,7 +6,7 @@ on:
     inputs:
       working_directory:
         type: string
-        description: Directory of the package.json, relative to the repository root
+        description: Directory of the package.json, relative to the repository root, without ./ (e.g. packages/api)
         default: "."
       runs_on:
         type: string
@@ -25,16 +25,23 @@ jobs:
       - name: checkout
         uses: actions/checkout@v7
         with:
-          sparse-checkout: ${{ inputs.working_directory }}/package.json
+          # non-cone patterns follow .gitignore rules: anchored with /, never ./
+          sparse-checkout: ${{ inputs.working_directory == '.' && '/package.json' || format('/{0}/package.json', inputs.working_directory) }}
           sparse-checkout-cone-mode: false
 
       - name: Read engines.node
         id: read
-        working-directory: ${{ inputs.working_directory }}
         run: |
-          engines_node=$(jq -r '.engines.node // empty' package.json)
+          package_json="$WORKING_DIRECTORY/package.json"
+          if [ ! -f "$package_json" ]; then
+            echo "::error::$package_json not found (working_directory is relative to the repository root, without ./)"
+            exit 1
+          fi
+          engines_node=$(jq -r '.engines.node // empty' "$package_json")
           if [[ ! "$engines_node" =~ ([0-9]+) ]]; then
-            echo "::error file=package.json::engines.node is missing or has no version (got '$engines_node')"
+            echo "::error file=$package_json::engines.node is missing or has no version (got '$engines_node')"
             exit 1
           fi
           echo "major=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+        env:
+          WORKING_DIRECTORY: ${{ inputs.working_directory }}
