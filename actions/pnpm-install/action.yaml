@@ -1,0 +1,64 @@
+---
+name: pnpm install
+description: >
+  Installs the pnpm and Node.js versions declared by the project, then the
+  dependencies from the frozen lockfile.
+
+inputs:
+  working_directory:
+    description: >
+      Workspace root (where package.json, pnpm-workspace.yaml and
+      pnpm-lock.yaml live), relative to the repository root
+    default: "."
+  filter:
+    description: >
+      pnpm selectors, one per line (e.g. `app...`), to install only these
+      workspace packages and their dependencies. Empty installs the whole
+      workspace.
+    default: ""
+  npm_token:
+    description: npm registry token, needed for private packages
+    default: ""
+  trust_lockfile:
+    description: >
+      Skip the supply-chain verification of the lockfile (minimumReleaseAge,
+      trustPolicy), for jobs whose pipeline already verifies it elsewhere
+    default: "false"
+  dedupe_check:
+    description: Fail when the lockfile is not deduplicated (pnpm dedupe --check)
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v6
+      with:
+        package_json_file: ${{ inputs.working_directory }}/package.json
+
+    - uses: actions/setup-node@v7
+      with:
+        node-version-file: ${{ inputs.working_directory }}/package.json
+
+    # also fails when the installed Node does not satisfy the project engines
+    - name: pnpm install
+      shell: bash
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        args=(--frozen-lockfile)
+        while IFS= read -r selector; do
+          if [ -n "$selector" ]; then args+=(--filter "$selector"); fi
+        done <<< "$FILTER"
+        pnpm install "${args[@]}"
+
+        if [ "$DEDUPE_CHECK" = "true" ]; then
+          pnpm dedupe --check
+        fi
+
+        # the token only lives in this step: a reinstall triggered later by
+        # `pnpm run` would fail on private packages with a misleading 404
+        echo "pnpm_config_verify_deps_before_run=error" >> "$GITHUB_ENV"
+      env:
+        FILTER: ${{ inputs.filter }}
+        DEDUPE_CHECK: ${{ inputs.dedupe_check }}
+        pnpm_config__auth: ${{ inputs.npm_token != '' && format('{{"https://registry.npmjs.org":{{"@":{{"authToken":"{0}"}}}}}}', inputs.npm_token) || '' }}
+        pnpm_config_trust_lockfile: ${{ inputs.trust_lockfile }}
