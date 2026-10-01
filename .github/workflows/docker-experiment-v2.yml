@@ -12,10 +12,10 @@ on:
       cpu_architecture:
         type: string
         description: "x86_64 or arm64"
-      use_node:
-        type: boolean
-        default: false
-        description: See docker-push-v4
+      build_args:
+        type: string
+        default: ""
+        description: Docker build args, one KEY=value per line
 
 jobs:
   image:
@@ -27,7 +27,7 @@ jobs:
       image_name: ${{ inputs.image_name }}
       image_tag: x${{ github.run_id }}
       use_ssh: ${{ inputs.use_ssh }}
-      use_node: ${{ inputs.use_node }}
+      build_args: ${{ inputs.build_args }}
 
   add-github-tag:
     needs: [image]

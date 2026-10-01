@@ -1,0 +1,41 @@
+---
+name: Read the Node.js major version of a project
+
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        type: string
+        description: Directory of the package.json, relative to the repository root
+        default: "."
+      runs_on:
+        type: string
+        default: ubuntu-latest-arm64
+    outputs:
+      major:
+        description: Major version of package.json engines.node (e.g. 24 for ^24.15.0)
+        value: ${{ jobs.node-version.outputs.major }}
+
+jobs:
+  node-version:
+    runs-on: ${{ inputs.runs_on }}
+    outputs:
+      major: ${{ steps.read.outputs.major }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: ${{ inputs.working_directory }}/package.json
+          sparse-checkout-cone-mode: false
+
+      - name: Read engines.node
+        id: read
+        working-directory: ${{ inputs.working_directory }}
+        run: |
+          engines_node=$(jq -r '.engines.node // empty' package.json)
+          major=$(grep -oE '[0-9]+' <<< "$engines_node" | head -1)
+          if [ -z "$major" ]; then
+            echo "::error file=package.json::engines.node is missing or has no version (got '$engines_node')"
+            exit 1
+          fi
+          echo "major=$major" >> "$GITHUB_OUTPUT"

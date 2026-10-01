@@ -31,13 +31,10 @@ on:
       file:
         type: string
         required: false
-      use_node:
-        type: boolean
-        default: false
-        description: >
-          Resolve the Node.js version declared by <build_context>/package.json
-          (engines.node, devEngines.runtime…) with actions/setup-node and pass
-          it to the build as the NODE_VERSION build arg
+      build_args:
+        type: string
+        default: ""
+        description: Docker build args, one KEY=value per line
     secrets:
       SSH_PRIVATE_KEY:
         required: false
@@ -56,21 +53,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Resolve Node.js version
-        id: node
-        if: ${{ inputs.use_node }}
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: ${{ inputs.build_context }}/package.json
-          package-manager-cache: false
-
-      - name: Set build args
-        id: build_args
-        if: ${{ inputs.use_node }}
-        run: echo "args=NODE_VERSION=${NODE_VERSION#v}" >> "$GITHUB_OUTPUT"
-        env:
-          NODE_VERSION: ${{ steps.node.outputs.node-version }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -110,7 +92,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           ssh: ${{ steps.set_ssh.outputs.ssh }}
-          build-args: ${{ steps.build_args.outputs.args }}
+          build-args: ${{ inputs.build_args }}
           provenance: false
 
       - name: Build (without cache)
@@ -122,7 +104,7 @@ jobs:
           load: true
           tags: ${{ env.IMAGE_TAG }}
           ssh: ${{ steps.set_ssh.outputs.ssh }}
-          build-args: ${{ steps.build_args.outputs.args }}
+          build-args: ${{ inputs.build_args }}
           provenance: false
 
       - name: Push to ECR
