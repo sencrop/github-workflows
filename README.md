@@ -172,6 +172,21 @@ in [cache management](https://docs.docker.com/build/ci/github-actions/cache/).
       cache_docker_layers: true
 ```
 
+To build a Node.js image without writing its version in the Dockerfile, pass
+the file declaring it: `actions/setup-node` resolves it (a range such as
+`^24.15.0` gives the latest matching release) and the build receives it as the
+`NODE_VERSION` build arg.
+
+```yaml
+    with:
+      node_version_file: package.json
+```
+
+```dockerfile
+ARG NODE_VERSION
+FROM node:${NODE_VERSION}-bookworm
+```
+
 ### docker-tag
 
 This workflow add a tag to an existing image in our elastic container repository.
