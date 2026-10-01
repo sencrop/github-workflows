@@ -33,9 +33,8 @@ jobs:
         working-directory: ${{ inputs.working_directory }}
         run: |
           engines_node=$(jq -r '.engines.node // empty' package.json)
-          major=$(grep -oE '[0-9]+' <<< "$engines_node" | head -1)
-          if [ -z "$major" ]; then
+          if [[ ! "$engines_node" =~ ([0-9]+) ]]; then
             echo "::error file=package.json::engines.node is missing or has no version (got '$engines_node')"
             exit 1
           fi
-          echo "major=$major" >> "$GITHUB_OUTPUT"
+          echo "major=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
