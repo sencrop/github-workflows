@@ -29,6 +29,22 @@ jobs:
 You can use it in subsequent jobs using `${{ needs.version.outputs.version }}`
 and `${{ needs.version.outputs.previous_version }}`.
 
+### Node version
+
+This workflow outputs the major version of `engines.node` in `package.json`
+(`24` for `^24.15.0`), the same rule devenv applies, so that the Node.js
+version is only written in `package.json`.
+
+```yaml
+jobs:
+  node-version:
+    uses: sencrop/github-workflows/.github/workflows/node-version-v1.yml@master
+    # with:
+    #   working_directory: packages/api
+```
+
+You can use it in subsequent jobs using `${{ needs.node-version.outputs.major }}`.
+
 ### Release please
 
 This workflow will trigger [release-please](https://github.com/googleapis/release-please).
@@ -170,6 +186,31 @@ in [cache management](https://docs.docker.com/build/ci/github-actions/cache/).
 ```yaml
     with:
       cache_docker_layers: true
+```
+
+Build args are passed with `build_args`, one `KEY=value` per line. For
+instance, to build a Node.js image without writing its version in the
+Dockerfile, read it with [node-version](#node-version):
+
+```yaml
+jobs:
+  node-version:
+    uses: sencrop/github-workflows/.github/workflows/node-version-v1.yml@master
+
+  image:
+    needs: [node-version]
+    uses: sencrop/github-workflows/.github/workflows/docker-push-v4.yml@master
+    secrets: inherit
+    with:
+      image_name: your-image-name
+      image_tag: your-image-tag
+      cpu_architecture: arm64
+      build_args: NODE_VERSION=${{ needs.node-version.outputs.major }}
+```
+
+```dockerfile
+ARG NODE_VERSION
+FROM node:${NODE_VERSION}-bookworm
 ```
 
 ### docker-tag

@@ -1,0 +1,47 @@
+---
+name: Read the Node.js major version of a project
+
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        type: string
+        description: Directory of the package.json, relative to the repository root, without ./ (e.g. packages/api)
+        default: "."
+      runs_on:
+        type: string
+        default: ubuntu-latest-arm64
+    outputs:
+      major:
+        description: Major version of package.json engines.node (e.g. 24 for ^24.15.0)
+        value: ${{ jobs.node-version.outputs.major }}
+
+jobs:
+  node-version:
+    runs-on: ${{ inputs.runs_on }}
+    outputs:
+      major: ${{ steps.read.outputs.major }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7
+        with:
+          # non-cone patterns follow .gitignore rules: anchored with /, never ./
+          sparse-checkout: ${{ inputs.working_directory == '.' && '/package.json' || format('/{0}/package.json', inputs.working_directory) }}
+          sparse-checkout-cone-mode: false
+
+      - name: Read engines.node
+        id: read
+        run: |
+          package_json="$WORKING_DIRECTORY/package.json"
+          if [ ! -f "$package_json" ]; then
+            echo "::error::$package_json not found (working_directory is relative to the repository root, without ./)"
+            exit 1
+          fi
+          engines_node=$(jq -r '.engines.node // empty' "$package_json")
+          if [[ ! "$engines_node" =~ ([0-9]+) ]]; then
+            echo "::error file=$package_json::engines.node is missing or has no version (got '$engines_node')"
+            exit 1
+          fi
+          echo "major=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+        env:
+          WORKING_DIRECTORY: ${{ inputs.working_directory }}

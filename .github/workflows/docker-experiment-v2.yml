@@ -12,6 +12,10 @@ on:
       cpu_architecture:
         type: string
         description: "x86_64 or arm64"
+      build_args:
+        type: string
+        default: ""
+        description: Docker build args, one KEY=value per line
 
 jobs:
   image:
@@ -23,6 +27,7 @@ jobs:
       image_name: ${{ inputs.image_name }}
       image_tag: x${{ github.run_id }}
       use_ssh: ${{ inputs.use_ssh }}
+      build_args: ${{ inputs.build_args }}
 
   add-github-tag:
     needs: [image]

@@ -31,6 +31,10 @@ on:
       file:
         type: string
         required: false
+      build_args:
+        type: string
+        default: ""
+        description: Docker build args, one KEY=value per line
     secrets:
       SSH_PRIVATE_KEY:
         required: false
@@ -88,6 +92,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           ssh: ${{ steps.set_ssh.outputs.ssh }}
+          build-args: ${{ inputs.build_args }}
           provenance: false
 
       - name: Build (without cache)
@@ -99,6 +104,7 @@ jobs:
           load: true
           tags: ${{ env.IMAGE_TAG }}
           ssh: ${{ steps.set_ssh.outputs.ssh }}
+          build-args: ${{ inputs.build_args }}
           provenance: false
 
       - name: Push to ECR
