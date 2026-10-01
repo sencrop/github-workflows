@@ -480,3 +480,57 @@ jobs:
 
 Once the `node_modules` cache is filled in, it can be used later on to prevent unnecessary dependencies install
 operations (see [npm-ci-with-cache](README.md#npm-ci-with-cache)).
+
+### pnpm-install
+
+This action installs the pnpm and Node.js versions declared by the project, then the dependencies from the frozen
+lockfile. Node.js is installed by `actions/setup-node` with `node-version-file: package.json`, pnpm by
+`pnpm/action-setup`: no version is written in the workflow. The install fails when the installed Node.js does not
+satisfy the project engines.
+
+```yaml
+- name: Install dependencies
+  uses: sencrop/github-workflows/actions/pnpm-install@master
+  with:
+    npm_token: ${{ secrets.NPM_TOKEN }}
+```
+
+Inputs, all optional:
+
+- `npm_token`: npm registry token, for private packages. It is only exposed to the install step, through
+  `pnpm_config__auth`: no `.npmrc` is written.
+- `working_directory`: workspace root (where `package.json`, `pnpm-workspace.yaml` and `pnpm-lock.yaml` live),
+  relative to the repository root. Defaults to `.`.
+- `filter`: pnpm selectors, one per line, to install only these workspace packages and their dependencies (monorepos).
+  Running the install from a sub-package directory is not enough: pnpm installs the whole workspace.
+- `trust_lockfile`: skip the supply-chain verification of the lockfile (`minimumReleaseAge`, `trustPolicy`). Set it to
+  `true` in every job but one: the verification queries the registry for each lockfile entry, once per pipeline is
+  enough.
+- `dedupe_check`: fail when the lockfile is not deduplicated (`pnpm dedupe --check`).
+
+The action sets `verifyDepsBeforeRun: error` for the rest of the job: a reinstall triggered by a later `pnpm run`
+fails with an explicit message instead of running without the token.
+
+```yaml
+jobs:
+  checks:
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        uses: sencrop/github-workflows/actions/pnpm-install@master
+        with:
+          npm_token: ${{ secrets.NPM_TOKEN }}
+          dedupe_check: true
+  build:
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        uses: sencrop/github-workflows/actions/pnpm-install@master
+        with:
+          npm_token: ${{ secrets.NPM_TOKEN }}
+          trust_lockfile: true
+          filter: web...
+```
+
+The pnpm store is not cached on purpose: on GitHub-hosted runners, restoring it took longer than downloading the
+packages from the registry (measured in sencrop/sencrop-app#7592).
