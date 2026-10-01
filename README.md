@@ -172,14 +172,15 @@ in [cache management](https://docs.docker.com/build/ci/github-actions/cache/).
       cache_docker_layers: true
 ```
 
-To build a Node.js image without writing its version in the Dockerfile, pass
-the file declaring it: `actions/setup-node` resolves it (a range such as
-`^24.15.0` gives the latest matching release) and the build receives it as the
-`NODE_VERSION` build arg.
+To build a Node.js image without writing its version in the Dockerfile, enable
+`use_node`: `actions/setup-node` resolves the version declared by the
+`package.json` of the build context (a range such as `^24.15.0` gives the
+latest matching release) and the build receives it as the `NODE_VERSION` build
+arg.
 
 ```yaml
     with:
-      node_version_file: package.json
+      use_node: true
 ```
 
 ```dockerfile

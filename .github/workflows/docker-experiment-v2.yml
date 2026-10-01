@@ -12,9 +12,9 @@ on:
       cpu_architecture:
         type: string
         description: "x86_64 or arm64"
-      node_version_file:
-        type: string
-        default: ""
+      use_node:
+        type: boolean
+        default: false
         description: See docker-push-v4
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
       image_name: ${{ inputs.image_name }}
       image_tag: x${{ github.run_id }}
       use_ssh: ${{ inputs.use_ssh }}
-      node_version_file: ${{ inputs.node_version_file }}
+      use_node: ${{ inputs.use_node }}
 
   add-github-tag:
     needs: [image]

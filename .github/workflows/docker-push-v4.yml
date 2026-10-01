@@ -31,13 +31,13 @@ on:
       file:
         type: string
         required: false
-      node_version_file:
-        type: string
-        default: ""
+      use_node:
+        type: boolean
+        default: false
         description: >
-          File declaring the Node.js version (package.json engines.node,
-          .nvmrc…), resolved by actions/setup-node and passed to the build as
-          the NODE_VERSION build arg
+          Resolve the Node.js version declared by <build_context>/package.json
+          (engines.node, devEngines.runtime…) with actions/setup-node and pass
+          it to the build as the NODE_VERSION build arg
     secrets:
       SSH_PRIVATE_KEY:
         required: false
@@ -59,14 +59,15 @@ jobs:
 
       - name: Resolve Node.js version
         id: node
-        if: ${{ inputs.node_version_file != '' }}
+        if: ${{ inputs.use_node }}
         uses: actions/setup-node@v7
         with:
-          node-version-file: ${{ inputs.node_version_file }}
+          node-version-file: ${{ inputs.build_context }}/package.json
+          package-manager-cache: false
 
       - name: Set build args
         id: build_args
-        if: ${{ inputs.node_version_file != '' }}
+        if: ${{ inputs.use_node }}
         run: echo "args=NODE_VERSION=${NODE_VERSION#v}" >> "$GITHUB_OUTPUT"
         env:
           NODE_VERSION: ${{ steps.node.outputs.node-version }}
