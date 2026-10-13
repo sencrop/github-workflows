@@ -262,7 +262,6 @@ jobs:
 
 This workflow will trigger a deployment of the given version of
 a [standard ECS fargate application](https://github.com/sencrop/terraform-modules).
-The outcome of the deployment will be notified on slack.
 
 The infrastructure code must defined the deployed service in the `ecs_services` output.
 
@@ -281,7 +280,6 @@ jobs:
       version: new-version
       environment: "preproduction or production"
       application: my-application
-      slack_channel: my-ops-slack-channel
 ```
 
 If your service uses a static docker image tag you may set the flag `use_version_as_docker_image_tag` to `false`.
@@ -425,7 +423,7 @@ jobs:
 
 ### notify-deployment-in-progress
 
-This action will notify in slack and in datadog that a deployment has been initiated for an application.
+This action will notify in datadog that a deployment has been initiated for an application.
 
 ```yaml
 jobs:
@@ -434,12 +432,11 @@ jobs:
       - name: Notify deployment in progress
         uses: sencrop/github-workflows/actions/notify-deployment-in-progress-v2@master
         with:
-          service: my-service
+          application: my-application
           environment: preproduction or production
           dd_api_key: ${{ secrets.DD_API_KEY }}
           former_version: version N-1
           new_version: version N
-          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 ```
 
 ### track-deployment-time
