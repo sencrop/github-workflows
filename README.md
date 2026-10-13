@@ -425,10 +425,6 @@ jobs:
 
 This action will notify in datadog that a deployment has been initiated for an application.
 
-Slack notifications come from the GitHub app, subscribed org-wide in `#deployment-updates-prod` and
-`#deployment-updates-preprod` to the deployment workflows by name (`/github subscribe list features` lists them).
-A repository is covered as long as its deployment workflow uses one of these names.
-
 ```yaml
 jobs:
   my-job:
