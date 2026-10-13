@@ -80,7 +80,6 @@ jobs:
           dd_api_key: ${{ secrets.DD_API_KEY }}
           former_version: ${{ steps.deployed_version.outputs.version }}
           new_version: ${{ inputs.version }}
-          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: Add environment tag
         uses: sencrop/github-workflows/actions/add-git-tag@master

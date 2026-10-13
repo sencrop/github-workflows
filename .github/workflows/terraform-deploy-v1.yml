@@ -22,15 +22,9 @@ on:
       log_level:
         type: string
         default: "INFO"
-      notify_on_success:
-        type: boolean
-        default: false
       self_hosted:
         type: boolean
         default: false
-      slack_channel:
-        type: string
-        required: false
       terraform_version:
         type: string
         required: false
@@ -57,8 +51,6 @@ jobs:
       ENV: ${{ inputs.environment }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
-      GITHUB_ACTIONS_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      APPLICATION_LOGS_URL: https://app.datadoghq.eu/logs?query=application%3A${{ inputs.application }}%20version%3A${{ inputs.version }}%20env%3A${{ inputs.environment }}
       TF_WORKSPACE: ${{ inputs.environment }}
       TF_LOG: ${{ inputs.log_level }}
     permissions:
@@ -76,21 +68,6 @@ jobs:
         run: |
           echo "Validating that production version has a valid format (must be v{major}.{minor}.{patch})"
           echo "${{ inputs.version }}" | grep -P '^v[0-9]+\.[0-9]+\.[0-9]+$'
-
-      - name: Find slack channel
-        if: ${{ inputs.slack_channel == '' }}
-        id: default_slack_channel
-        run: |
-          if [[ "$environment" == "production" ]]; then
-            echo "channel_id=ops" >> "$GITHUB_OUTPUT"
-          elif [[ "$environment" == "preproduction" ]]; then
-            echo "channel_id=ops-preprod" >> "$GITHUB_OUTPUT"
-          else
-            echo "unknown environment: $environment"
-            exit 1
-          fi
-        env:
-          environment: ${{ inputs.environment }}
 
       - name: Configure aws credentials
         uses: sencrop/github-workflows/actions/configure-aws-credentials@master
@@ -122,7 +99,6 @@ jobs:
           dd_api_key: ${{ secrets.DD_API_KEY }}
           former_version: ${{ steps.deployed_version.outputs.version }}
           new_version: ${{ inputs.version }}
-          slack_bot_token: ${{ secrets.SLACK_BOT_TOKEN }}
 
       - name: Add environment tag
         if: github.ref_name == 'master' || github.ref_type == 'tag'
@@ -141,21 +117,3 @@ jobs:
           application: ${{ inputs.application }}
           environment: ${{ inputs.environment }}
           dd_api_key: ${{ secrets.DD_API_KEY }}
-
-      - name: Notify success
-        if: ${{ inputs.notify_on_success }}
-        uses: slackapi/slack-github-action@v1.25.0
-        with:
-          channel-id: ${{ inputs.slack_channel || steps.default_slack_channel.outputs.channel_id }}
-          slack-message: ":white_check_mark: A new version of `${{ inputs.application }}` (version `${{ inputs.version }}`) has been successfully deployed to ${{ inputs.environment }} (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.APPLICATION_LOGS_URL }}|Logs>)."
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-
-      - name: Notify failure
-        if: ${{ failure() }}
-        uses: slackapi/slack-github-action@v1.25.0
-        with:
-          channel-id: ${{ inputs.slack_channel || steps.default_slack_channel.outputs.channel_id }}
-          slack-message: ":rotating_siren: The last deployment of `${{ inputs.application }}` (version `${{ inputs.version }}`) to ${{ inputs.environment }} has failed (<${{ env.GITHUB_ACTIONS_URL }}|Github Actions>|<${{ env.APPLICATION_LOGS_URL }}|Logs>)."
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
