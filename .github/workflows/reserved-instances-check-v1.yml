@@ -1,0 +1,65 @@
+---
+name: Check reserved instances coverage
+
+on:
+  workflow_call:
+    inputs:
+      aws_region:
+        type: string
+        default: "eu-central-1"
+      ci_iam_role:
+        type: string
+        default: ""
+      slack_channel:
+        type: string
+        default: "ops"
+      expiry_warning_days:
+        type: string
+        default: "60"
+      grace_days:
+        type: string
+        default: "30"
+      min_uncovered_units:
+        type: string
+        default: "1"
+      always_notify:
+        description: "Post the report to Slack even when nothing needs attention"
+        type: boolean
+        default: false
+      runs_on:
+        type: string
+        default: ubuntu-latest
+
+jobs:
+  check:
+    runs-on: ${{ inputs.runs_on }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure aws credentials
+        uses: sencrop/github-workflows/actions/configure-aws-credentials@master
+        with:
+          aws_account_id: ${{ vars.AWS_ACCOUNT_ID }}
+          aws_region: ${{ inputs.aws_region }}
+          ci_iam_role: ${{ inputs.ci_iam_role }}
+
+      - name: Check reservations
+        id: check
+        uses: sencrop/github-workflows/actions/reserved-instances-check@master
+        with:
+          aws_region: ${{ inputs.aws_region }}
+          expiry_warning_days: ${{ inputs.expiry_warning_days }}
+          grace_days: ${{ inputs.grace_days }}
+          min_uncovered_units: ${{ inputs.min_uncovered_units }}
+
+      - name: Notify
+        if: ${{ steps.check.outputs.alert == 'true' || inputs.always_notify }}
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          channel-id: ${{ inputs.slack_channel }}
+          slack-message: |
+            ${{ steps.check.outputs.alert == 'true' && ':moneybag:' || ':white_check_mark:' }} ${{ steps.check.outputs.report }}
+            <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Github Actions>
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

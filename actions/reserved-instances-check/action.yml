@@ -1,0 +1,45 @@
+---
+name: Reserved instances check
+description: Compare the RDS and ElastiCache capacity in service with the active reservations
+
+inputs:
+  aws_region:
+    type: string
+    default: "eu-central-1"
+  expiry_warning_days:
+    description: "Warn when a reservation ends within this many days"
+    type: string
+    default: "60"
+  grace_days:
+    description: "Ignore resources created less than this many days ago"
+    type: string
+    default: "30"
+  min_uncovered_units:
+    description: "Report a pool only when its uncovered capacity reaches this many size units (1 = one *.small)"
+    type: string
+    default: "1"
+outputs:
+  alert:
+    description: "true when some capacity is uncovered or a reservation expires soon"
+    value: ${{ steps.check.outputs.alert }}
+  report:
+    description: "Slack-formatted report"
+    value: ${{ steps.check.outputs.report }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check reservations
+      id: check
+      run: |
+        python3 "${GITHUB_ACTION_PATH}/check.py" \
+          --region "$AWS_REGION" \
+          --expiry-days "$EXPIRY_DAYS" \
+          --grace-days "$GRACE_DAYS" \
+          --min-uncovered-units "$MIN_UNCOVERED_UNITS"
+      shell: bash
+      env:
+        AWS_REGION: ${{ inputs.aws_region }}
+        EXPIRY_DAYS: ${{ inputs.expiry_warning_days }}
+        GRACE_DAYS: ${{ inputs.grace_days }}
+        MIN_UNCOVERED_UNITS: ${{ inputs.min_uncovered_units }}

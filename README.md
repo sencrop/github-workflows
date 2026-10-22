@@ -346,6 +346,40 @@ jobs:
       db_instance: my-instance-name
 ```
 
+## Reservations workflows
+
+### reserved-instances-check
+
+Compare the RDS and ElastiCache capacity in service with the active reservations, in
+normalized size units per pool (engine + instance family, the way AWS applies size-flexible
+reservations), and post to Slack when some capacity is not covered or when a reservation ends
+within `expiry_warning_days`. Nothing is posted when everything is covered, unless
+`always_notify` is set.
+
+Resources created less than `grace_days` ago are ignored. A resource that is meant to run
+without reservation for a while carries the tag `reservation-exempt-until=YYYY-MM-DD`; it is
+listed as exempted until that date, then reported again.
+
+The CI role needs the `common_reservations_read_only` policy from
+[infra-ci](https://github.com/sencrop/infra-ci).
+
+```yaml
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+jobs:
+  check:
+    uses: sencrop/github-workflows/.github/workflows/reserved-instances-check-v1.yml@master
+    secrets: inherit
+    with:
+      slack_channel: ops
+      expiry_warning_days: "60"
+      grace_days: "30"
+      min_uncovered_units: "1"
+```
+
 ## IAM policy linter
 
 This action will lint a directory containing IAM policies in JSON format.
