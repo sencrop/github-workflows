@@ -19,6 +19,7 @@ SIZE_UNITS = {
     "32xlarge": 256, "48xlarge": 384,
 }
 RDS_PRODUCT_BY_ENGINE = {"postgres": "postgresql"}
+AURORA_IO_OPTIMIZED_FACTOR = 1.3
 RDS_NOT_BILLED_STATUSES = {"creating", "deleting", "deleted", "failed", "stopped", "stopping"}
 ELASTICACHE_NOT_BILLED_STATUSES = {"creating", "deleting", "deleted", "create-failed", "incompatible-network"}
 SKIPPED = []
@@ -58,6 +59,18 @@ def skip(service, identifier, reason):
     SKIPPED.append(f"{identifier} ({service}): {reason}")
 
 
+def rds_pool(product, instance_class, multi_az):
+    """SQL Server reservations are not size-flexible: they only cover the exact class and deployment."""
+    if product.startswith("sqlserver"):
+        return f"{product} / {instance_class}" + (" Multi-AZ" if multi_az else "")
+    return f"{product} / {'.'.join(instance_class.split('.')[:2])}"
+
+
+def aurora_io_optimized_clusters(aws):
+    clusters = aws.call("rds", "describe-db-clusters").get("DBClusters", [])
+    return {c["DBClusterIdentifier"] for c in clusters if c.get("StorageType") == "aurora-iopt1"}
+
+
 def exemption(tags):
     for tag in tags or []:
         if tag.get("Key") == EXEMPT_TAG:
@@ -69,6 +82,7 @@ def exemption(tags):
 
 
 def rds_resources(aws):
+    io_optimized = aurora_io_optimized_clusters(aws)
     for db in aws.call("rds", "describe-db-instances").get("DBInstances", []):
         if db.get("DBInstanceStatus") in RDS_NOT_BILLED_STATUSES:
             continue
@@ -78,12 +92,15 @@ def rds_resources(aws):
             continue
         engine = db["Engine"]
         product = RDS_PRODUCT_BY_ENGINE.get(engine, engine)
-        family = ".".join(db["DBInstanceClass"].split(".")[:2])
+        label = db["DBInstanceClass"] + (" Multi-AZ" if db.get("MultiAZ") else "")
+        if db.get("DBClusterIdentifier") in io_optimized:
+            units *= AURORA_IO_OPTIMIZED_FACTOR
+            label += " I/O-Optimized"
         yield {
             "service": "rds",
             "id": db["DBInstanceIdentifier"],
-            "pool": f"{product} / {family}",
-            "label": db["DBInstanceClass"] + (" Multi-AZ" if db.get("MultiAZ") else ""),
+            "pool": rds_pool(product, db["DBInstanceClass"], db.get("MultiAZ")),
+            "label": label,
             "units": units * (2 if db.get("MultiAZ") else 1),
             "created": parse_time(db["InstanceCreateTime"]),
             "exempt_until": exemption(db.get("TagList")),
@@ -99,10 +116,9 @@ def rds_reservations(aws):
             skip("rds reservation", ri["ReservedDBInstanceId"], f"unknown size {ri['DBInstanceClass']}")
             continue
         start = parse_time(ri["StartTime"])
-        family = ".".join(ri["DBInstanceClass"].split(".")[:2])
         yield {
             "id": ri["ReservedDBInstanceId"],
-            "pool": f"{ri['ProductDescription'].lower()} / {family}",
+            "pool": rds_pool(ri["ProductDescription"].lower().split("(")[0], ri["DBInstanceClass"], ri.get("MultiAZ")),
             "label": f"{ri['DBInstanceCount']} x {ri['DBInstanceClass']}" + (" Multi-AZ" if ri.get("MultiAZ") else ""),
             "units": ri["DBInstanceCount"] * units * (2 if ri.get("MultiAZ") else 1),
             "end": start + dt.timedelta(seconds=int(ri["Duration"])),

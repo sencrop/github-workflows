@@ -364,7 +364,9 @@ The CI role needs the `common_reservations_read_only` policy from
 [infra-ci](https://github.com/sencrop/infra-ci).
 
 ElastiCache capacity is pooled by node family regardless of the engine, since AWS applies
-Redis OSS reserved nodes to Valkey clusters of the same family.
+Redis OSS reserved nodes to Valkey clusters of the same family. Aurora instances of an
+I/O-Optimized cluster weigh 1.3 times their size, as AWS applies reservations to them at that
+rate. SQL Server reservations are not size-flexible and are matched on the exact class.
 
 ```yaml
 on:
