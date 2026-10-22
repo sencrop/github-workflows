@@ -363,6 +363,9 @@ listed as exempted until that date, then reported again.
 The CI role needs the `common_reservations_read_only` policy from
 [infra-ci](https://github.com/sencrop/infra-ci).
 
+ElastiCache capacity is pooled by node family regardless of the engine, since AWS applies
+Redis OSS reserved nodes to Valkey clusters of the same family.
+
 ```yaml
 on:
   schedule:
@@ -373,6 +376,9 @@ jobs:
   check:
     uses: sencrop/github-workflows/.github/workflows/reserved-instances-check-v1.yml@master
     secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
     with:
       slack_channel: ops
       expiry_warning_days: "60"

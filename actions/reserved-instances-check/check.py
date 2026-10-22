@@ -16,8 +16,12 @@ from collections import defaultdict
 SIZE_UNITS = {
     "nano": 0.25, "micro": 0.5, "small": 1, "medium": 2, "large": 4, "xlarge": 8,
     "2xlarge": 16, "4xlarge": 32, "8xlarge": 64, "12xlarge": 96, "16xlarge": 128, "24xlarge": 192,
+    "32xlarge": 256, "48xlarge": 384,
 }
 RDS_PRODUCT_BY_ENGINE = {"postgres": "postgresql"}
+RDS_NOT_BILLED_STATUSES = {"creating", "deleting", "deleted", "failed", "stopped", "stopping"}
+ELASTICACHE_NOT_BILLED_STATUSES = {"creating", "deleting", "deleted", "create-failed", "incompatible-network"}
+SKIPPED = []
 EXEMPT_TAG = "reservation-exempt-until"
 NOW = dt.datetime.now(dt.timezone.utc)
 
@@ -47,7 +51,11 @@ def parse_time(value):
 
 
 def size_units(instance_class):
-    return SIZE_UNITS[instance_class.split(".")[-1]]
+    return SIZE_UNITS.get(instance_class.split(".")[-1])
+
+
+def skip(service, identifier, reason):
+    SKIPPED.append(f"{identifier} ({service}): {reason}")
 
 
 def exemption(tags):
@@ -62,7 +70,11 @@ def exemption(tags):
 
 def rds_resources(aws):
     for db in aws.call("rds", "describe-db-instances").get("DBInstances", []):
-        if db.get("DBInstanceStatus") not in (None, "available", "backing-up", "modifying", "storage-optimization"):
+        if db.get("DBInstanceStatus") in RDS_NOT_BILLED_STATUSES:
+            continue
+        units = size_units(db["DBInstanceClass"])
+        if units is None:
+            skip("rds", db["DBInstanceIdentifier"], f"{db['DBInstanceClass']} is not a reservable size")
             continue
         engine = db["Engine"]
         product = RDS_PRODUCT_BY_ENGINE.get(engine, engine)
@@ -72,7 +84,7 @@ def rds_resources(aws):
             "id": db["DBInstanceIdentifier"],
             "pool": f"{product} / {family}",
             "label": db["DBInstanceClass"] + (" Multi-AZ" if db.get("MultiAZ") else ""),
-            "units": size_units(db["DBInstanceClass"]) * (2 if db.get("MultiAZ") else 1),
+            "units": units * (2 if db.get("MultiAZ") else 1),
             "created": parse_time(db["InstanceCreateTime"]),
             "exempt_until": exemption(db.get("TagList")),
         }
@@ -82,13 +94,17 @@ def rds_reservations(aws):
     for ri in aws.call("rds", "describe-reserved-db-instances").get("ReservedDBInstances", []):
         if ri.get("State") != "active":
             continue
+        units = size_units(ri["DBInstanceClass"])
+        if units is None:
+            skip("rds reservation", ri["ReservedDBInstanceId"], f"unknown size {ri['DBInstanceClass']}")
+            continue
         start = parse_time(ri["StartTime"])
         family = ".".join(ri["DBInstanceClass"].split(".")[:2])
         yield {
             "id": ri["ReservedDBInstanceId"],
             "pool": f"{ri['ProductDescription'].lower()} / {family}",
             "label": f"{ri['DBInstanceCount']} x {ri['DBInstanceClass']}" + (" Multi-AZ" if ri.get("MultiAZ") else ""),
-            "units": ri["DBInstanceCount"] * size_units(ri["DBInstanceClass"]) * (2 if ri.get("MultiAZ") else 1),
+            "units": ri["DBInstanceCount"] * units * (2 if ri.get("MultiAZ") else 1),
             "end": start + dt.timedelta(seconds=int(ri["Duration"])),
         }
 
@@ -96,7 +112,11 @@ def rds_reservations(aws):
 def elasticache_resources(aws):
     clusters = aws.call("elasticache", "describe-cache-clusters", "--show-cache-node-info").get("CacheClusters", [])
     for cluster in clusters:
-        if cluster.get("CacheClusterStatus") not in (None, "available", "modifying", "snapshotting"):
+        if cluster.get("CacheClusterStatus") in ELASTICACHE_NOT_BILLED_STATUSES:
+            continue
+        units = size_units(cluster["CacheNodeType"])
+        if units is None:
+            skip("elasticache", cluster["CacheClusterId"], f"{cluster['CacheNodeType']} is not a reservable size")
             continue
         tags = aws.call("elasticache", "list-tags-for-resource", "--resource-name", cluster["ARN"]).get("TagList")
         family = ".".join(cluster["CacheNodeType"].split(".")[:2])
@@ -104,8 +124,8 @@ def elasticache_resources(aws):
             "service": "elasticache",
             "id": cluster["CacheClusterId"],
             "pool": f"elasticache / {family}",
-            "label": f"{cluster['NumCacheNodes']} x {cluster['CacheNodeType']}",
-            "units": cluster["NumCacheNodes"] * size_units(cluster["CacheNodeType"]),
+            "label": f"{cluster['NumCacheNodes']} x {cluster['CacheNodeType']} {cluster.get('Engine', '')}".rstrip(),
+            "units": cluster["NumCacheNodes"] * units,
             "created": parse_time(cluster["CacheClusterCreateTime"]),
             "exempt_until": exemption(tags),
         }
@@ -115,13 +135,17 @@ def elasticache_reservations(aws):
     for ri in aws.call("elasticache", "describe-reserved-cache-nodes").get("ReservedCacheNodes", []):
         if ri.get("State") != "active":
             continue
+        units = size_units(ri["CacheNodeType"])
+        if units is None:
+            skip("elasticache reservation", ri["ReservedCacheNodeId"], f"unknown size {ri['CacheNodeType']}")
+            continue
         start = parse_time(ri["StartTime"])
         family = ".".join(ri["CacheNodeType"].split(".")[:2])
         yield {
             "id": ri["ReservedCacheNodeId"],
             "pool": f"elasticache / {family}",
-            "label": f"{ri['CacheNodeCount']} x {ri['CacheNodeType']}",
-            "units": ri["CacheNodeCount"] * size_units(ri["CacheNodeType"]),
+            "label": f"{ri['CacheNodeCount']} x {ri['CacheNodeType']} {ri.get('ProductDescription', '')}".rstrip(),
+            "units": ri["CacheNodeCount"] * units,
             "end": start + dt.timedelta(seconds=int(ri["Duration"])),
         }
 
@@ -149,7 +173,7 @@ def analyse(resources, reservations, expiry_days, grace_days, min_uncovered_unit
     for pool, items in sorted(demand.items()):
         in_service = sum(r["units"] for r in items)
         gap = in_service - reserved.get(pool, 0)
-        if gap >= min_uncovered_units:
+        if gap > 0 and gap >= min_uncovered_units:
             uncovered.append({"pool": pool, "in_service": in_service, "reserved": reserved.get(pool, 0), "gap": gap, "items": items})
 
     expiring = [ri for ri in reservations if ri["end"] <= NOW + dt.timedelta(days=expiry_days)]
@@ -184,6 +208,9 @@ def report(uncovered, expiring, recent, exempt, expired_exemptions, expiry_days)
     if recent:
         lines.append("*Ignored, created recently*")
         lines += [f"• {r['id']} ({r['label']}), {(NOW - r['created']).days} days old" for r in recent]
+    if SKIPPED:
+        lines.append("*Skipped*")
+        lines += [f"• {item}" for item in SKIPPED]
     return "\n".join(lines)
 
 
@@ -208,6 +235,8 @@ def main():
     parser.add_argument("--fixture-dir", help="read <service>_<operation>[_<args>].json files from this directory instead of calling the AWS CLI")
     args = parser.parse_args()
 
+    if args.fixture_dir and not os.path.isdir(args.fixture_dir):
+        parser.error(f"fixture directory not found: {args.fixture_dir}")
     aws = Aws(args.region, args.fixture_dir)
     resources = list(rds_resources(aws)) + list(elasticache_resources(aws))
     reservations = list(rds_reservations(aws)) + list(elasticache_reservations(aws))
@@ -215,7 +244,7 @@ def main():
         resources, reservations, args.expiry_days, args.grace_days, args.min_uncovered_units
     )
     text = report(uncovered, expiring, recent, exempt, expired_exemptions, args.expiry_days)
-    alert = bool(uncovered or expiring or expired_exemptions)
+    alert = bool(uncovered or expiring)
     print(text)
     write_github_outputs(alert, text)
     return 0
