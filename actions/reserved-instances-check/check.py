@@ -59,10 +59,10 @@ def skip(service, identifier, reason):
     SKIPPED.append(f"{identifier} ({service}): {reason}")
 
 
-def rds_pool(product, instance_class, multi_az):
-    """SQL Server reservations are not size-flexible: they only cover the exact class and deployment."""
-    if product.startswith("sqlserver"):
-        return f"{product} / {instance_class}" + (" Multi-AZ" if multi_az else "")
+def rds_pool(product, license_included, instance_class, multi_az):
+    """SQL Server and Oracle License Included reservations are not size-flexible: they only cover the exact class and deployment."""
+    if product.startswith("sqlserver") or (product.startswith("oracle") and license_included):
+        return f"{product} (li) / {instance_class}" + (" Multi-AZ" if multi_az else "")
     return f"{product} / {'.'.join(instance_class.split('.')[:2])}"
 
 
@@ -99,7 +99,7 @@ def rds_resources(aws):
         yield {
             "service": "rds",
             "id": db["DBInstanceIdentifier"],
-            "pool": rds_pool(product, db["DBInstanceClass"], db.get("MultiAZ")),
+            "pool": rds_pool(product, db.get("LicenseModel") == "license-included", db["DBInstanceClass"], db.get("MultiAZ")),
             "label": label,
             "units": units * (2 if db.get("MultiAZ") else 1),
             "created": parse_time(db["InstanceCreateTime"]),
@@ -118,7 +118,7 @@ def rds_reservations(aws):
         start = parse_time(ri["StartTime"])
         yield {
             "id": ri["ReservedDBInstanceId"],
-            "pool": rds_pool(ri["ProductDescription"].lower().split("(")[0], ri["DBInstanceClass"], ri.get("MultiAZ")),
+            "pool": rds_pool(ri["ProductDescription"].lower().split("(")[0], "(li)" in ri["ProductDescription"].lower(), ri["DBInstanceClass"], ri.get("MultiAZ")),
             "label": f"{ri['DBInstanceCount']} x {ri['DBInstanceClass']}" + (" Multi-AZ" if ri.get("MultiAZ") else ""),
             "units": ri["DBInstanceCount"] * units * (2 if ri.get("MultiAZ") else 1),
             "end": start + dt.timedelta(seconds=int(ri["Duration"])),
