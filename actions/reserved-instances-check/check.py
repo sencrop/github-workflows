@@ -23,6 +23,7 @@ AURORA_IO_OPTIMIZED_FACTOR = 1.3
 RDS_NOT_BILLED_STATUSES = {"creating", "deleting", "deleted", "failed", "stopped", "stopping"}
 ELASTICACHE_NOT_BILLED_STATUSES = {"creating", "deleting", "deleted", "create-failed", "incompatible-network"}
 SKIPPED = []
+RESERVATION_STATES = {"active", "payment-pending"}
 EXEMPT_TAG = "reservation-exempt-until"
 NOW = dt.datetime.now(dt.timezone.utc)
 
@@ -109,7 +110,7 @@ def rds_resources(aws):
 
 def rds_reservations(aws):
     for ri in aws.call("rds", "describe-reserved-db-instances").get("ReservedDBInstances", []):
-        if ri.get("State") != "active":
+        if ri.get("State") not in RESERVATION_STATES:
             continue
         units = size_units(ri["DBInstanceClass"])
         if units is None:
@@ -149,7 +150,7 @@ def elasticache_resources(aws):
 
 def elasticache_reservations(aws):
     for ri in aws.call("elasticache", "describe-reserved-cache-nodes").get("ReservedCacheNodes", []):
-        if ri.get("State") != "active":
+        if ri.get("State") not in RESERVATION_STATES:
             continue
         units = size_units(ri["CacheNodeType"])
         if units is None:
