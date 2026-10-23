@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare the RDS and ElastiCache capacity in service with the active reservations.
+"""Compare the RDS and ElastiCache capacity in service with the reservations held (active or awaiting payment).
 
 Capacity is counted in normalized size units per pool (engine + instance family),
 the way AWS applies size-flexible reservations: a t4g.xlarge weighs 8 units,
@@ -23,6 +23,7 @@ AURORA_IO_OPTIMIZED_FACTOR = 1.3
 RDS_NOT_BILLED_STATUSES = {"creating", "deleting", "deleted", "failed", "stopped", "stopping"}
 ELASTICACHE_NOT_BILLED_STATUSES = {"creating", "deleting", "deleted", "create-failed", "incompatible-network"}
 SKIPPED = []
+RESERVATION_STATES = {"active", "payment-pending"}
 EXEMPT_TAG = "reservation-exempt-until"
 NOW = dt.datetime.now(dt.timezone.utc)
 
@@ -109,7 +110,7 @@ def rds_resources(aws):
 
 def rds_reservations(aws):
     for ri in aws.call("rds", "describe-reserved-db-instances").get("ReservedDBInstances", []):
-        if ri.get("State") != "active":
+        if ri.get("State") not in RESERVATION_STATES:
             continue
         units = size_units(ri["DBInstanceClass"])
         if units is None:
@@ -119,7 +120,7 @@ def rds_reservations(aws):
         yield {
             "id": ri["ReservedDBInstanceId"],
             "pool": rds_pool(ri["ProductDescription"].lower().split("(")[0], "(li)" in ri["ProductDescription"].lower(), ri["DBInstanceClass"], ri.get("MultiAZ")),
-            "label": f"{ri['DBInstanceCount']} x {ri['DBInstanceClass']}" + (" Multi-AZ" if ri.get("MultiAZ") else ""),
+            "label": f"{ri['DBInstanceCount']} x {ri['DBInstanceClass']}" + (" Multi-AZ" if ri.get("MultiAZ") else "") + (" (awaiting payment)" if ri.get("State") == "payment-pending" else ""),
             "units": ri["DBInstanceCount"] * units * (2 if ri.get("MultiAZ") else 1),
             "end": start + dt.timedelta(seconds=int(ri["Duration"])),
         }
@@ -149,7 +150,7 @@ def elasticache_resources(aws):
 
 def elasticache_reservations(aws):
     for ri in aws.call("elasticache", "describe-reserved-cache-nodes").get("ReservedCacheNodes", []):
-        if ri.get("State") != "active":
+        if ri.get("State") not in RESERVATION_STATES:
             continue
         units = size_units(ri["CacheNodeType"])
         if units is None:
@@ -160,7 +161,7 @@ def elasticache_reservations(aws):
         yield {
             "id": ri["ReservedCacheNodeId"],
             "pool": f"elasticache / {family}",
-            "label": f"{ri['CacheNodeCount']} x {ri['CacheNodeType']} {ri.get('ProductDescription', '')}".rstrip(),
+            "label": f"{ri['CacheNodeCount']} x {ri['CacheNodeType']} {ri.get('ProductDescription', '')}".rstrip() + (" (awaiting payment)" if ri.get("State") == "payment-pending" else ""),
             "units": ri["CacheNodeCount"] * units,
             "end": start + dt.timedelta(seconds=int(ri["Duration"])),
         }
@@ -210,7 +211,7 @@ def report(uncovered, expiring, recent, exempt, expired_exemptions, expiry_days)
             for r in sorted(u["items"], key=lambda r: -r["units"]):
                 lines.append(f"    ◦ {r['id']} ({r['label']}, {fmt_units(r['units'])})")
     else:
-        lines.append("• All capacity in service is covered by active reservations.")
+        lines.append("• All capacity in service is covered by reservations (active or awaiting payment).")
     if expiring:
         lines.append(f"*Reservations expiring within {expiry_days} days*")
         for ri in expiring:

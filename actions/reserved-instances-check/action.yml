@@ -1,6 +1,6 @@
 ---
 name: Reserved instances check
-description: Compare the RDS and ElastiCache capacity in service with the active reservations
+description: Compare the RDS and ElastiCache capacity in service with the reservations held, active or awaiting payment
 
 inputs:
   aws_region:
