@@ -389,7 +389,8 @@ jobs:
 
 ### reserved-instances-check
 
-Compare the RDS and ElastiCache capacity in service with the active reservations, in
+Compare the RDS and ElastiCache capacity in service with the reservations held (active or
+awaiting payment, since a purchase is committed as soon as it is made), in
 normalized size units per pool (engine + instance family, the way AWS applies size-flexible
 reservations), and post to Slack when some capacity is not covered or when a reservation ends
 within `expiry_warning_days`. Nothing is posted when everything is covered, unless
