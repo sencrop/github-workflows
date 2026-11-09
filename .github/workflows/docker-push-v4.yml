@@ -55,7 +55,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Configure aws credentials
         uses: sencrop/github-workflows/actions/configure-aws-credentials@master
@@ -65,13 +65,13 @@ jobs:
           ci_iam_role: ${{ inputs.ci_iam_role }}
 
       - name: Login to ECR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_DEFAULT_REGION }}.amazonaws.com
 
       - name: Start ssh agent
         if: ${{ inputs.use_ssh }}
-        uses: webfactory/ssh-agent@v0.9.0
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
@@ -83,7 +83,7 @@ jobs:
 
       - name: Build (with cache)
         if: ${{ inputs.cache_docker_layers }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: ${{ inputs.build_context }}
           file: ${{ inputs.file || format('{0}/Dockerfile', inputs.build_context) }}
@@ -97,7 +97,7 @@ jobs:
 
       - name: Build (without cache)
         if: ${{ ! inputs.cache_docker_layers }}
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: ${{ inputs.build_context }}
           file: ${{ inputs.file || format('{0}/Dockerfile', inputs.build_context) }}
