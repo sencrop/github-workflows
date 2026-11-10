@@ -53,13 +53,23 @@ jobs:
           grace_days: ${{ inputs.grace_days }}
           min_uncovered_units: ${{ inputs.min_uncovered_units }}
 
+      # Built with jq: the report spans several lines, which can't be inlined in the YAML payload
+      - name: Build Slack payload
+        if: ${{ steps.check.outputs.alert == 'true' || inputs.always_notify }}
+        env:
+          CHANNEL: ${{ inputs.slack_channel }}
+          EMOJI: ${{ steps.check.outputs.alert == 'true' && ':moneybag:' || ':white_check_mark:' }}
+          REPORT: ${{ steps.check.outputs.report }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          jq -n --arg channel "$CHANNEL" --arg text "$EMOJI $REPORT"$'\n'"<$RUN_URL|Github Actions>" \
+            '{channel: $channel, text: $text}' > "$RUNNER_TEMP/slack-payload.json"
+
       - name: Notify
         if: ${{ steps.check.outputs.alert == 'true' || inputs.always_notify }}
-        uses: slackapi/slack-github-action@v1.25.0
+        uses: slackapi/slack-github-action@v4.0.0
         with:
-          channel-id: ${{ inputs.slack_channel }}
-          slack-message: |
-            ${{ steps.check.outputs.alert == 'true' && ':moneybag:' || ':white_check_mark:' }} ${{ steps.check.outputs.report }}
-            <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Github Actions>
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload-file-path: ${{ runner.temp }}/slack-payload.json
+          errors: true
