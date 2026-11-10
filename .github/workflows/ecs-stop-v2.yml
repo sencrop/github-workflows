@@ -30,7 +30,7 @@ jobs:
       contents: read
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configure aws credentials
         uses: sencrop/github-workflows/actions/configure-aws-credentials@master
