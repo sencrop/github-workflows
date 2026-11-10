@@ -72,9 +72,9 @@ jobs:
           }' > .releaserc
 
       - name: Create github release only
-        uses: cycjimmy/semantic-release-action@v4.1.0
+        uses: cycjimmy/semantic-release-action@v8.1.4
         with:
           extra_plugins: |
-            conventional-changelog-conventionalcommits@6.0.0
+            conventional-changelog-conventionalcommits@9.3.1
         env:
           GITHUB_TOKEN: ${{ steps.app_token.outputs.token }}
