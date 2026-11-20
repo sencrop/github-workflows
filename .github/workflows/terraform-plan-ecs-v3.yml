@@ -113,23 +113,26 @@ jobs:
             echo "No changes. Your infrastructure matches the configuration." > plan.txt
           fi
 
-      # Some plans may rarely contain backticks which break the following javascript code to create a comment and
-      # show the plan, so we need to remove them first
-      - name: Put Plan in Env Var
-        run: |
-          # shellcheck disable=SC2016
-          sed 's|`|\\\`|g' plan.txt > safe_plan.txt
-          PLAN="$(cat safe_plan.txt)"
-          # shellcheck disable=SC2129
-          echo "PLAN<<EOF" >> "$GITHUB_ENV"
-          echo "$PLAN" >> "$GITHUB_ENV"
-          echo "EOF" >> "$GITHUB_ENV"
-
       - uses: actions/github-script@v9
         if: github.event_name == 'pull_request'
+        env:
+          PLAN_FILE: ${{ inputs.working_directory }}/plan.txt
         with:
           script: |
-            const { data: comments } = await github.rest.issues.listComments({
+            const fs = require('fs')
+            // GitHub rejects comments over 65,536 characters
+            const maxPlanLength = 60000
+            let plan = fs.readFileSync(process.env.PLAN_FILE, 'utf8').trimEnd()
+            let truncationNotice = ''
+            if (plan.length > maxPlanLength) {
+              const fullLength = plan.length
+              const lastLineEnd = plan.lastIndexOf('\n', maxPlanLength)
+              plan = plan.slice(0, lastLineEnd > 0 ? lastLineEnd : maxPlanLength)
+              const jobLogUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+              truncationNotice = `\n:warning: Plan truncated: ${plan.length} of ${fullLength} characters shown. The full plan is in the [job log](${jobLogUrl}).\n`
+            }
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
@@ -140,23 +143,23 @@ jobs:
             })
             const output = `#### ${commentTitle}
             \`\`\`diff\n
-            ${{ env.PLAN }}
+            ${plan}
             \`\`\`
+            ${truncationNotice}
             <details>
               <summary> More about this </summary>
               This diff doesn't display the upcoming image version change as the new tag version will be computed after the merge.
             </details>`
 
-            // Update a comment if it already exists
             if (botComment) {
-              github.rest.issues.updateComment({
+              await github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: botComment.id,
                 body: output
               })
             } else {
-              github.rest.issues.createComment({
+              await github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
